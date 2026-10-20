@@ -24,7 +24,7 @@ public:
     void executeJavaScript(const std::string &s) override { last = s; ++calls; }
 };
 static void check(bool value, const char *message) { if (!value) throw std::runtime_error(message); }
-int main(int argc, char **argv)
+int main(int argc, char **argv) try
 {
     QApplication app(argc, argv);
     QWidget main;
@@ -102,6 +102,32 @@ int main(int argc, char **argv)
     controller.loadSettings(settings);
     check(controller.mode == "follow", "Invalid mode not handled");
 
+    const auto saved = controller.preset();
+    auto custom = saved;
+    custom["mode"] = "custom"; custom["density"] = "compact";
+    custom["colors"] = QJsonObject{{"background", "#000000"}, {"accent", "#ffdd00"}, {"border", "#333333"}};
+    check(controller.setPreset(custom), "Valid preset rejected");
+    check(controller.palette()["base"] == "#000000", "Custom background lost");
+    check(controller.palette()["text"] == "#ffffff", "Dark background text contrast failed");
+    check(controller.palette()["onAccent"] == "#000000", "Custom accent contrast failed");
+    check(controller.palette()["border"] == "#333333", "Custom border lost");
+    controller.saveSettings(settings); controller.resetPreferences(); controller.loadSettings(settings);
+    check(controller.preset() == custom, "Custom settings roundtrip failed");
+    auto bad = custom; bad["density"] = "arbitrary css";
+    check(!controller.setPreset(bad) && controller.preset() == custom, "Invalid density mutated state");
+    bad = custom; bad["colors"] = QJsonObject{{"background", "red;"}};
+    check(!controller.setPreset(bad) && controller.preset() == custom, "Invalid colors mutated state");
+    bad = custom; bad["panels"] = QJsonObject{};
+    check(!controller.setPreset(bad), "Incomplete panel selection accepted");
+    bad = custom; bad["version"] = 2;
+    check(!controller.setPreset(bad), "Future preset accepted");
+    const auto encoded = QJsonDocument(custom).toJson();
+    check(controller.setPreset(QJsonDocument::fromJson(encoded).object()), "Export/import roundtrip failed");
+    controller.enabled = true; controller.panels["twitchChat"] = true;
+    controller.apply();
+    check(chatBrowser->last.find("\"density\":\"compact\"") != std::string::npos, "Density missing from bridge");
+    check(controller.setPreset(saved) && controller.preset() == saved, "Preview snapshot restoration failed");
+
     QFile fixture(PALETTE_FIXTURE);
     check(fixture.open(QIODevice::ReadOnly), "Missing palette fixtures");
     const auto fixtures = QJsonDocument::fromJson(fixture.readAll()).object();
@@ -127,3 +153,5 @@ int main(int argc, char **argv)
               << fixtures.size() << " OBS palettes, dock lifecycle, no unrelated browser access\n";
     return 0;
 }
+
+catch (const std::exception &error) { std::cerr << "FAIL: " << error.what() << std::endl; return 1; }

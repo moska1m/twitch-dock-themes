@@ -1,5 +1,14 @@
 # Histórico
 
+## 0.3.0
+
+- Densidades Compacta, Padrão da Twitch e Confortável.
+- Cores personalizadas de fundo, destaque e bordas.
+- Prévia temporária com restauração ao fechar e confirmação ao salvar.
+- Importação e exportação de presets JSON com validação.
+- Correção do contorno duplicado e do fundo interno do campo do chat.
+- Testes de presets, persistência, cores e densidade; validação manual das novidades no OBS.
+
 ## 0.2.0
 
 - Seleção independente de Chat, Informações, Atividades e Estatísticas.

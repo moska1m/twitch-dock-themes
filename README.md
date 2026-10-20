@@ -1,4 +1,4 @@
-# Twitch Dock Themes — 0.2.0
+# Twitch Dock Themes — 0.3.0
 
 Aparência integrada para os quatro painéis da Twitch no OBS Studio, com cores do OBS ou dos estilos Obsidian e Obsidian Graphite.
 
@@ -8,9 +8,9 @@ Aparência integrada para os quatro painéis da Twitch no OBS Studio, com cores 
 
 1. Feche o OBS, extraia o pacote e execute `Install.ps1` no PowerShell.
 2. Reabra o OBS e acesse **Ferramentas → Twitch Dock Themes**.
-3. Escolha **Seguir a paleta do OBS**, **Obsidian** ou **Obsidian Graphite**.
+3. Escolha **Seguir a paleta do OBS**, **Obsidian** **Obsidian Graphite** ou **Cores personalizadas**.
 4. Marque os painéis desejados: Chat, Informações da transmissão, Atividades e Estatísticas.
-5. Escolha se deseja transição suave ao passar o mouse e clique em **Aplicar agora**.
+5. Escolha a densidade e as transições. Use **Prévia nos painéis** para experimentar e **Aplicar e salvar** para confirmar.
 
 O plugin verifica os painéis a cada 2,5 segundos e reaplica o estilo após recarregamentos. O indicador **Encontrado** confirma a presença do navegador do painel; não confirma que a página aceitou todos os seletores CSS. Abra os painéis pelo menu Painéis do OBS e faça login pela interface normal da Twitch, se necessário.
 
@@ -25,10 +25,19 @@ Instalações novas começam em modo automático com os quatro painéis habilita
 | Seguir a paleta do OBS | Usa as cores da paleta Qt e acompanha mudanças de tema do OBS. |
 | Obsidian | Fundos quase pretos, superfícies grafite, destaque ciano. |
 | Obsidian Graphite | Superfícies cinza grafite com destaque ciano. |
+| Cores personalizadas | Fundo, destaque e bordas escolhidos por você, com texto derivado para contraste. |
 
 O modo automático pode acompanhar Default, Acri, Classic, Grey, Light, Rachni e estilos personalizados. É uma aproximação da paleta; regras QSS específicas, imagens e efeitos do tema nativo não são convertidos. Contraste dos botões e links recebe tratamento próprio.
 
 Inclui os estilos nativos `Obsidian.ovt` e `Obsidian Graphite.ovt`. O instalador adiciona os que ainda não existem. Escolha-os nas configurações de Aparência do OBS. Fonte e densidade nativas continuam sob controle do OBS; o conteúdo web da Twitch mantém seu próprio dimensionamento. O plugin não impõe uma fonte nem uma altura fixa aos painéis.
+
+## Densidade, prévia e presets
+
+- **Compacta**, **Padrão da Twitch** e **Confortável** ajustam espaços nas mensagens do chat e campos compatíveis. Não alteram a fonte nem todos os componentes do dashboard.
+- **Prévia nos painéis** aplica temporariamente. Fechar a janela restaura a última configuração salva; **Aplicar e salvar** confirma as escolhas.
+- **Exportar preset** salva as escolhas em JSON sem alterar os painéis. **Importar preset** preenche os controles; use Prévia ou Aplicar para ativá-las.
+- Presets incluem aparência, cores, densidade, movimento e seleção dos painéis. Arquivos inválidos ou maiores que 64 KB são rejeitados.
+- O campo do chat mantém o contorno do contêiner, sem uma segunda borda ou fundo sobre o editor interno.
 
 ## Escopo e funcionamento
 
@@ -57,10 +66,11 @@ Para desinstalar, feche o OBS e remova somente a pasta `twitch-dock-themes` no d
 ## Validação e limitações
 
 - A versão 0.1 foi testada manualmente pelo usuário no OBS, inclusive com os painéis secundários.
-- A versão 0.2 compilou em Release x64 e carregou em processo de teste com as dependências do OBS instalado.
+- A versão 0.3 compilou em Release x64 e carregou em processo de teste com as dependências do OBS instalado.
 - O teste Qt cobre os quatro painéis, seleção independente, exclusão de outros docks, ativação/restauração, recriação de painéis, paletas, contraste, persistência e migração das preferências. Inclui dez paletas de referência.
 - O teste JavaScript cobre domínio/caminho, aplicação idempotente, remoção, navegação, validação de cores e opção de movimento.
-- A inspeção visual das novidades da versão 0.2 na Twitch autenticada deve ser feita no OBS. Os testes automatizados usam navegadores simulados; não substituem essa conferência.
+- As novidades da 0.3 e a correção do campo do chat foram aprovadas em teste manual pelo usuário no OBS. Os testes automatizados usam navegadores simulados; não substituem a conferência visual em outras instalações.
+- Testes adicionais cobrem presets inválidos, importação/exportação, restauração do estado da prévia, cores personalizadas e densidade.
 
 A Twitch pode mudar suas variáveis e seletores. Nem todos os componentes do dashboard necessariamente usam as variáveis sobrescritas. Compatibilidade visual completa com FFZ/BTTV, todas as larguras e todos os estilos ainda não está certificada.
 

@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.28)
-project(TwitchDockThemes VERSION 0.2.0 LANGUAGES C CXX)
+project(TwitchDockThemes VERSION 0.3.0 LANGUAGES C CXX)
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 find_package(Qt6 6.11.1 EXACT REQUIRED COMPONENTS Core Gui Widgets)

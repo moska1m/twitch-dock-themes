@@ -20,7 +20,15 @@
     "accent", "accentHover", "text", "muted", "onAccent", "border", "link"];
   if (!p || !required.every(k => typeof p[k] === "string" && /^#[0-9a-f]{6}$/i.test(p[k])))
     return "invalid-palette";
+  const spacing = new Map([["compact", ["2px", "4px"]], ["comfortable", ["8px", "10px"]]]).get(config.density);
+  const densityCss = spacing ? `
+.chat-line__message { padding-top: ${spacing[0]} !important; padding-bottom: ${spacing[0]} !important; }
+.chat-input { padding: ${spacing[1]} !important; }
+textarea:not([aria-invalid="true"]), input:is([type="text"], [type="search"], [type="number"], [type="url"]):not([aria-invalid="true"]) {
+  padding-top: ${spacing[1]} !important; padding-bottom: ${spacing[1]} !important;
+}` : "";
   const css = `
+${densityCss}
 :root, .tw-root--theme-dark, .tw-root--theme-light {
   --color-background-base: ${p.base} !important;
   --color-background-body: ${p.window} !important;
@@ -66,7 +74,6 @@ html, body { background-color: ${p.window} !important; }
 .chat-room, .stream-chat, .chat-shell, .chat-input {
   background-color: ${p.base} !important;
 }
-.chat-input textarea:not([aria-invalid="true"]), [data-a-target="chat-input"]:not([aria-invalid="true"]),
 textarea:not([aria-invalid="true"]),
 input:is([type="text"], [type="search"], [type="number"], [type="url"]):not([aria-invalid="true"]) {
   background-color: ${p.input} !important;
@@ -78,6 +85,17 @@ textarea:not([aria-invalid="true"]):focus-visible,
 input:is([type="text"], [type="search"], [type="number"], [type="url"]):not([aria-invalid="true"]):focus-visible {
   outline: 2px solid ${p.accent};
   outline-offset: -2px;
+}
+/* The chat container owns the border and focus ring. Its editor is a transparent layer. */
+.chat-input textarea:not([aria-invalid="true"]),
+.chat-input [contenteditable="true"]:not([aria-invalid="true"]),
+[data-a-target="chat-input"]:is(textarea, [contenteditable="true"]):not([aria-invalid="true"]) {
+  background: transparent !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  box-shadow: none !important;
+  outline: none !important;
+  color: ${p.text} !important;
 }
 [data-a-target="chat-send-button"] {
   background-color: ${p.accent} !important;

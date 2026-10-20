@@ -14,8 +14,8 @@ const document = {
   },
   head: { appendChild: el => elements.set(el.id, el) },
 };
-function run(enabled, hostname = "www.twitch.tv", pathname = "/popout/example/chat", colors = palette, protocol = "https:", motion = true) {
-  return vm.runInNewContext(source.replace("__CONFIG__", JSON.stringify({ enabled, palette: colors, motion })),
+function run(enabled, hostname = "www.twitch.tv", pathname = "/popout/example/chat", colors = palette, protocol = "https:", motion = true, density = "standard") {
+  return vm.runInNewContext(source.replace("__CONFIG__", JSON.stringify({ enabled, palette: colors, motion, density })),
     { document, location: { hostname, pathname, protocol } });
 }
 assert.equal(run(true), "applied");
@@ -43,3 +43,20 @@ assert.ok(!/\.chat-author__display-name|\.chat-badge|\.chat-image/.test(source))
 assert.ok(source.includes("prefers-reduced-motion"));
 assert.ok(!/\b(fetch|XMLHttpRequest|localStorage|cookie)\b/.test(source));
 console.log("PASS: host/path scope, idempotency, removal, navigation, palette validation; no network/storage access");
+
+for (const [density, padding] of [["compact", "2px"], ["comfortable", "8px"]]) {
+  run(true, "www.twitch.tv", "/popout/example/chat", palette, "https:", true, density);
+  assert.ok(elements.values().next().value.textContent.includes(`padding-top: ${padding} !important`));
+}
+for (const density of ["standard", "__proto__", "red; } body { display:none"]) {
+  run(true, "www.twitch.tv", "/popout/example/chat", palette, "https:", true, density);
+  assert.ok(!elements.values().next().value.textContent.includes("padding-top:"));
+}
+console.log("PASS: compact/comfortable spacing, standard reset, unknown density rejection");
+
+run(true);
+const chatCss = elements.values().next().value.textContent;
+assert.ok(chatCss.includes('[data-a-target="chat-input"]:is(textarea, [contenteditable="true"])'));
+assert.ok(chatCss.includes("background: transparent !important;"));
+assert.ok(chatCss.includes("box-shadow: none !important;"));
+console.log("PASS: chat editor is transparent; container retains native focus styling");

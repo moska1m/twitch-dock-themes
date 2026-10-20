@@ -5,6 +5,7 @@
 #include <QPalette>
 #include <QJsonDocument>
 #include <QSet>
+#include <QRegularExpression>
 #include <QDockWidget>
 #include <algorithm>
 #include <cmath>
@@ -33,6 +34,8 @@ void ThemeController::resetPreferences()
     enabled = true;
     motion = true;
     mode = "follow";
+    density = "standard";
+    background = "#101014"; accent = "#54ccf5"; border = "#35353b";
     for (const auto &id : dockIds()) panels[id] = true;
 }
 
@@ -42,7 +45,14 @@ void ThemeController::loadSettings(QSettings &s)
     enabled = s.value("enabled", true).toBool();
     motion = s.value("motion", true).toBool();
     mode = s.value("mode", "follow").toString();
-    if (mode != "obsidian" && mode != "graphite" && mode != "follow") mode = "follow";
+    if (mode != "obsidian" && mode != "graphite" && mode != "follow" && mode != "custom") mode = "follow";
+    density = s.value("density", "standard").toString();
+    if (density != "compact" && density != "comfortable") density = "standard";
+    const QRegularExpression hex("^#[0-9a-fA-F]{6}$");
+    for (auto entry : {qMakePair(QString("background"), &background), qMakePair(QString("accent"), &accent), qMakePair(QString("border"), &border)}) {
+        const auto value = s.value("colors/" + entry.first, *entry.second).toString();
+        if (hex.match(value).hasMatch()) *entry.second = value;
+    }
     const bool legacy = !s.contains("schema") && s.contains("secondary");
     for (const auto &id : dockIds()) {
         const bool defaultValue = legacy ? (id == "twitchChat" || s.value("secondary").toBool()) : true;
@@ -52,7 +62,11 @@ void ThemeController::loadSettings(QSettings &s)
 
 void ThemeController::saveSettings(QSettings &s) const
 {
-    s.setValue("schema", 2);
+    s.setValue("schema", 3);
+    s.setValue("density", density);
+    s.setValue("colors/background", background);
+    s.setValue("colors/accent", accent);
+    s.setValue("colors/border", border);
     s.setValue("enabled", enabled);
     s.setValue("motion", motion);
     s.setValue("mode", mode);
@@ -96,7 +110,21 @@ QJsonObject ThemeController::palette() const
             {"link", "#54ccf5"}
         };
     }
-    const auto p = QApplication::palette();
+    auto p = QApplication::palette();
+    if (mode == "custom") {
+        const QColor bg(background);
+        const bool bright = luminance(bg) > .45;
+        const QColor surface = bright ? bg.darker(108) : QColor::fromRgb(
+            std::min(255, bg.red()+16), std::min(255, bg.green()+16), std::min(255, bg.blue()+16));
+        p.setColor(QPalette::Window, bg); p.setColor(QPalette::Base, bg);
+        p.setColor(QPalette::Button, surface);
+        const QColor text = contrast(Qt::white, bg) > contrast(Qt::black, bg) ? Qt::white : Qt::black;
+        p.setColor(QPalette::Text, text);
+        p.setColor(QPalette::Disabled, QPalette::Text, readableLink(bright ? QColor("#555555") : QColor("#aaaaaa"), bg, surface));
+        p.setColor(QPalette::Highlight, QColor(this->accent));
+        p.setColor(QPalette::Link, QColor(this->accent));
+        p.setColor(QPalette::Light, QColor(border));
+    }
     const QColor accent = p.color(QPalette::Highlight);
     const bool light = luminance(p.color(QPalette::Window)) > .45;
     const QColor hover = light ? p.color(QPalette::Button).darker(108) : p.color(QPalette::Button).lighter(125);
@@ -115,10 +143,10 @@ QJsonObject ThemeController::palette() const
     };
 }
 
-QString ThemeController::script(bool active, const QJsonObject &colors, bool motion)
+QString ThemeController::script(bool active, const QJsonObject &colors, bool motion, const QString &density)
 {
     QString result = QString::fromUtf8(bridgeScript);
-    const QJsonObject config{{"enabled", active}, {"palette", colors}, {"motion", motion}};
+    const QJsonObject config{{"enabled", active}, {"palette", colors}, {"motion", motion}, {"density", density}};
     result.replace("__CONFIG__", QString::fromUtf8(QJsonDocument(config).toJson(QJsonDocument::Compact)));
     return result;
 }
@@ -127,7 +155,7 @@ int ThemeController::dispatch(bool active)
 {
     found.clear();
     if (!main) return 0;
-    const std::string applyScript = script(active, palette(), motion).toUtf8().toStdString();
+    const std::string applyScript = script(active, palette(), motion, density).toUtf8().toStdString();
     const std::string removeScript = script(false, {}).toUtf8().toStdString();
     int count = 0;
     // Run on Qt's UI thread. Only named built-in Twitch docks are considered.
@@ -148,3 +176,31 @@ int ThemeController::dispatch(bool active)
 
 void ThemeController::apply() { lastFound = dispatch(enabled); }
 void ThemeController::remove() { lastFound = dispatch(false); }
+
+QJsonObject ThemeController::preset() const
+{
+    QJsonObject selected;
+    for (const auto &id : dockIds()) selected[id] = panels.value(id, false);
+    return {{"format", "twitch-dock-themes"}, {"version", 1}, {"enabled", enabled},
+        {"mode", mode}, {"motion", motion}, {"density", density}, {"panels", selected},
+        {"colors", QJsonObject{{"background", background}, {"accent", accent}, {"border", border}}}};
+}
+
+bool ThemeController::setPreset(const QJsonObject &v, QString *error)
+{
+    auto fail = [&]() { if (error) *error = "Preset inválido ou de uma versão incompatível."; return false; };
+    if (v["format"] != "twitch-dock-themes" || v["version"] != 1 ||
+        !v["enabled"].isBool() || !v["motion"].isBool()) return fail();
+    const auto m = v["mode"].toString(), d = v["density"].toString();
+    if (!QStringList{"follow", "obsidian", "graphite", "custom"}.contains(m) ||
+        !QStringList{"compact", "standard", "comfortable"}.contains(d)) return fail();
+    const auto colors = v["colors"].toObject(), selected = v["panels"].toObject();
+    const QRegularExpression hex("^#[0-9a-fA-F]{6}$");
+    for (const auto &key : {"background", "accent", "border"})
+        if (!hex.match(colors[key].toString()).hasMatch()) return fail();
+    for (const auto &id : dockIds()) if (!selected[id].isBool()) return fail();
+    enabled = v["enabled"].toBool(); motion = v["motion"].toBool(); mode = m; density = d;
+    background = colors["background"].toString(); accent = colors["accent"].toString(); border = colors["border"].toString();
+    for (const auto &id : dockIds()) panels[id] = selected[id].toBool();
+    return true;
+}
