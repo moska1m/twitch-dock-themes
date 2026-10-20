@@ -1,5 +1,10 @@
 # Guia rápido
 
+![Janela de configurações em teste](images/settings-compact.png)
+
+Interface em teste, capturada da janela real do plugin em um host Qt simulado no Windows. A aparência pode variar conforme o tema do OBS.
+
+
 ## Instalar
 
 1. Use OBS Studio **32.2.2**, Windows x64.
@@ -21,13 +26,13 @@ Configure as opções e clique em **Salvar como** na seção Meus presets. Dê u
 
 Salvar como guarda uma combinação na biblioteca. Salvar confirma o que o OBS deve usar. Excluir um preset não apaga a configuração ativa dos painéis.
 
-Para compartilhar uma combinação, use Exportar preset. Para receber uma, use Importar preset e depois Salvar se quiser mantê-la ativa.
+Para compartilhar uma combinação, abra Opções avançadas → Exportar preset. Para receber uma, use Importar preset e depois Salvar se quiser mantê-la ativa.
 
 ## Resolver problemas
 
 - Painel não encontrado: abra-o pelo menu Painéis do OBS e confira o login normal da Twitch.
-- Visual inesperado: abra Diagnóstico dos painéis e confira a aparência efetiva. O relatório indica envio do CSS, sem confirmar seu resultado na página.
-- Voltar ao original: use Desativar e restaurar Twitch.
+- Visual inesperado: abra Opções avançadas → Diagnóstico dos painéis e confira a aparência efetiva. O relatório indica envio do CSS, sem confirmar seu resultado na página.
+- Voltar ao original: use Opções avançadas → Desativar e restaurar Twitch.
 - Voltar à DLL anterior: feche o OBS e execute Restore-Previous.ps1, quando existir uma cópia anterior.
 
 O plugin acompanha a aparência dos painéis integrados da Twitch. A instalação não exige fornecer credenciais ao plugin.

@@ -34,3 +34,10 @@ target_compile_options(dock-theme-tests PRIVATE /W4 /utf-8)
 enable_testing()
 add_test(NAME dock-controller COMMAND dock-theme-tests)
 set_tests_properties(dock-controller PROPERTIES ENVIRONMENT "QT_QPA_PLATFORM=minimal")
+
+add_executable(settings-ui-tests tests/settings-ui.cpp src/controller.cpp)
+target_link_libraries(settings-ui-tests PRIVATE obs_import Qt6::Widgets
+  "${OBS_IMPORT_DIR}/obs.lib" "${OBS_IMPORT_DIR}/obs-frontend-api.lib")
+target_compile_options(settings-ui-tests PRIVATE /W4 /utf-8)
+add_test(NAME settings-ui COMMAND settings-ui-tests)
+set_tests_properties(settings-ui PROPERTIES ENVIRONMENT "QT_QPA_PLATFORM=minimal" TIMEOUT 20)

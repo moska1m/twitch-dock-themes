@@ -33,6 +33,8 @@
 #include <QScrollArea>
 #include <QScreen>
 #include <QScopedValueRollback>
+#include <QFormLayout>
+#include <QToolButton>
 
 OBS_DECLARE_MODULE()
 MODULE_EXPORT const char *obs_module_name(void) { return "Twitch Dock Themes"; }
@@ -58,7 +60,7 @@ static void openSettings()
     ThemeController draft(nullptr);
     draft.setPreset(committed);
     SettingsDialog d(static_cast<QWidget *>(obs_frontend_get_main_window()));
-    d.setWindowTitle("Twitch Dock Themes · 0.5.0");
+    d.setWindowTitle("Twitch Dock Themes · experimental");
     d.setMinimumWidth(480);
     bool populating = false;
     QTimer liveTimer(&d); liveTimer.setSingleShot(true); liveTimer.setInterval(0);
@@ -68,7 +70,7 @@ static void openSettings()
     auto *content = new QWidget;
     auto *layout = new QVBoxLayout(content);
     scroll->setWidget(content); outer->addWidget(scroll);
-    d.resize(860, qMin(780, d.screen()->availableGeometry().height() - 80));
+    d.resize(800, qMin(680, d.screen()->availableGeometry().height() - 80));
     auto *enabled = new QCheckBox("Aplicar aparência aos painéis da Twitch");
     auto *mode = new QComboBox;
     mode->addItem("Seguir a paleta do OBS", "follow");
@@ -147,15 +149,31 @@ static void openSettings()
     auto *apply = buttons->button(QDialogButtonBox::Apply); apply->setText("Salvar");
     buttons->button(QDialogButtonBox::Close)->setText("Fechar");
     auto *reset = new QPushButton("Desativar e restaurar Twitch");
-    layout->addWidget(enabled); layout->addWidget(new QLabel("Aparência")); layout->addWidget(mode);
-    layout->addWidget(colors); layout->addWidget(new QLabel("Densidade (chat e atividades)")); layout->addWidget(density);
-    layout->addWidget(panelBox); layout->addWidget(motion); layout->addWidget(libraryBox); layout->addLayout(presetRow);
-    layout->addWidget(diagnostic);
-    layout->addWidget(status); layout->addWidget(reset); outer->addWidget(buttons);
+    auto *general = new QGroupBox("Aparência geral");
+    auto *generalForm = new QFormLayout(general);
+    generalForm->addRow("Aparência", mode);
+    generalForm->addRow("Densidade do chat e atividades", density);
+    auto *advancedToggle = new QToolButton;
+    advancedToggle->setText("Opções avançadas"); advancedToggle->setCheckable(true);
+    advancedToggle->setToolButtonStyle(Qt::ToolButtonTextBesideIcon);
+    advancedToggle->setArrowType(Qt::RightArrow);
+    auto *advanced = new QWidget;
+    auto *advancedLayout = new QVBoxLayout(advanced);
+    advancedLayout->setContentsMargins(0, 0, 0, 0);
+    advancedLayout->addWidget(motion); advancedLayout->addLayout(presetRow);
+    advancedLayout->addWidget(diagnostic); advancedLayout->addWidget(reset);
+    advanced->hide();
+    QObject::connect(advancedToggle, &QToolButton::toggled, &d, [advanced, advancedToggle](bool open) {
+        advanced->setVisible(open); advancedToggle->setArrowType(open ? Qt::DownArrow : Qt::RightArrow);
+    });
+    layout->addWidget(enabled); layout->addWidget(libraryBox);
+    layout->addWidget(general); layout->addWidget(colors); layout->addWidget(panelBox);
+    layout->addWidget(advancedToggle); layout->addWidget(advanced); layout->addStretch();
+    outer->addWidget(status); outer->addWidget(buttons);
     auto updateColors = [&]() {
         bool needed = mode->currentData() == "custom";
         for (auto *pm : panelModes) needed = needed || pm->currentData() == "custom";
-        colors->setEnabled(needed);
+        colors->setVisible(needed);
     };
     auto populate = [&]() {
         QScopedValueRollback<bool> guard(populating, true);
@@ -380,7 +398,7 @@ void obs_module_post_load(void)
     menuAction = static_cast<QAction *>(obs_frontend_add_tools_menu_qaction("Twitch Dock Themes"));
     if (menuAction) QObject::connect(menuAction, &QAction::triggered, controller, []() { openSettings(); });
     obs_frontend_add_event_callback(frontendEvent, nullptr);
-    blog(LOG_INFO, "[twitch-dock-themes] 0.5.0 loaded; mode=%s.", controller->mode.toUtf8().constData());
+    blog(LOG_INFO, "[twitch-dock-themes] 0.5.0 experimental compact-settings loaded; mode=%s.", controller->mode.toUtf8().constData());
 }
 
 void obs_module_unload(void)
