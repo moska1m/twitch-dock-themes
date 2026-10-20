@@ -58,7 +58,7 @@ static void openSettings()
     ThemeController draft(nullptr);
     draft.setPreset(committed);
     SettingsDialog d(static_cast<QWidget *>(obs_frontend_get_main_window()));
-    d.setWindowTitle("Twitch Dock Themes · experimental");
+    d.setWindowTitle("Twitch Dock Themes · 0.5.0");
     d.setMinimumWidth(480);
     bool populating = false;
     QTimer liveTimer(&d); liveTimer.setSingleShot(true); liveTimer.setInterval(0);
@@ -309,7 +309,7 @@ static void openSettings()
             if (!controller) { report.reject(); return; }
             controller->apply();
             auto data = controller->diagnostics();
-            data["pluginBuild"] = "0.4.0";
+            data["pluginBuild"] = "0.5.0";
             data["qtRuntime"] = QString::fromLatin1(qVersion());
             data["obsApiVersion"] = static_cast<int>(obs_get_version());
             text->setPlainText(QString::fromUtf8(QJsonDocument(data).toJson()));
@@ -356,7 +356,7 @@ static void frontendEvent(enum obs_frontend_event event, void *)
 bool obs_module_load(void)
 {
     if (obs_get_version() != LIBOBS_API_VER) {
-        blog(LOG_WARNING, "[twitch-dock-themes] Build 0.4.0 requires OBS 32.2.2.");
+        blog(LOG_WARNING, "[twitch-dock-themes] Build 0.5.0 requires OBS 32.2.2.");
         return false;
     }
     return true;
@@ -380,7 +380,7 @@ void obs_module_post_load(void)
     menuAction = static_cast<QAction *>(obs_frontend_add_tools_menu_qaction("Twitch Dock Themes"));
     if (menuAction) QObject::connect(menuAction, &QAction::triggered, controller, []() { openSettings(); });
     obs_frontend_add_event_callback(frontendEvent, nullptr);
-    blog(LOG_INFO, "[twitch-dock-themes] 0.4.0 experimental save-guard loaded; mode=%s.", controller->mode.toUtf8().constData());
+    blog(LOG_INFO, "[twitch-dock-themes] 0.5.0 loaded; mode=%s.", controller->mode.toUtf8().constData());
 }
 
 void obs_module_unload(void)

@@ -1,5 +1,13 @@
 # Histórico
 
+## 0.5.0
+
+- Biblioteca local de presets por nome, com salvar, substituir e excluir.
+- Alterações automáticas ao editar controles, selecionar ou importar um preset.
+- Botão Salvar e confirmação ao fechar com mudanças pendentes, incluindo X e Escape.
+- Restauração da última configuração salva ao descartar alterações.
+- Janela com rolagem e ações principais sempre visíveis.
+
 ## 0.4.0
 
 - Aparência independente nos quatro painéis, com opção de acompanhar o geral.

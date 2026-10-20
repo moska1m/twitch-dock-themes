@@ -1,4 +1,4 @@
-# Twitch Dock Themes — 0.4.0
+# Twitch Dock Themes — 0.5.0
 
 Aparência integrada para os quatro painéis da Twitch no OBS Studio, com cores do OBS ou dos estilos Obsidian e Obsidian Graphite.
 
@@ -10,13 +10,15 @@ Aparência integrada para os quatro painéis da Twitch no OBS Studio, com cores 
 2. Reabra o OBS e acesse **Ferramentas → Twitch Dock Themes**.
 3. Escolha **Seguir a paleta do OBS**, **Obsidian**, **Obsidian Graphite** ou **Cores personalizadas**.
 4. Marque os painéis desejados: Chat, Informações da transmissão, Atividades e Estatísticas.
-5. Escolha a densidade e as transições. Use **Prévia nos painéis** para experimentar e **Aplicar e salvar** para confirmar.
+5. Altere aparência, densidade e transições: os painéis atualizam automaticamente. Clique em **Salvar** para confirmar.
+
+[Guia rápido de instalação e uso](docs/GUIA.md).
 
 O plugin verifica os painéis a cada 2,5 segundos e reaplica o estilo após recarregamentos. O indicador **Encontrado** confirma a presença do navegador do painel; não confirma que a página aceitou todos os seletores CSS. Abra os painéis pelo menu Painéis do OBS e faça login pela interface normal da Twitch, se necessário.
 
-**Desativar e restaurar Twitch** remove a folha de estilo e salva a desativação. Desmarcar um painel e aplicar restaura somente aquele painel. Fechar a janela sem aplicar descarta as alterações pendentes.
+**Desativar e restaurar Twitch** remove a folha de estilo e salva a desativação. Desmarcar um painel restaura imediatamente aquele painel. Fechar com alterações pendentes pede confirmação; sair sem salvar restaura a última configuração salva.
 
-Instalações novas começam em modo automático com os quatro painéis habilitados. Na atualização da versão 0.1, o modo escolhido e a preferência de painéis secundários são preservados. A migração é gravada ao aplicar.
+Instalações novas começam em modo automático com os quatro painéis habilitados. Na atualização da versão 0.1, o modo escolhido e a preferência de painéis secundários são preservados. A migração é gravada ao salvar.
 
 ## Aparências
 
@@ -31,17 +33,23 @@ O modo automático pode acompanhar Default, Acri, Classic, Grey, Light, Rachni e
 
 Inclui os estilos nativos `Obsidian.ovt` e `Obsidian Graphite.ovt`. O instalador adiciona os que ainda não existem. Escolha-os nas configurações de Aparência do OBS. Fonte e densidade nativas continuam sob controle do OBS; o conteúdo web da Twitch mantém seu próprio dimensionamento. O plugin não troca a família da fonte nem impõe altura fixa aos painéis. A densidade de Atividades pode alterar o tamanho do texto.
 
-## Densidade, prévia e presets
+## Densidade, alterações automáticas e presets
 
 - Densidade disponível somente para **Chat** e **Atividades**: Compacta, Padrão da Twitch e Confortável. No chat, ajusta espaços. Nas atividades, ajusta espaços e texto (12 px no compacto, 14 px no confortável). Informações e Estatísticas mantêm o dimensionamento original.
-- **Prévia nos painéis** aplica temporariamente. Fechar a janela restaura a última configuração salva; **Aplicar e salvar** confirma as escolhas.
-- **Exportar preset** salva as escolhas em JSON sem alterar os painéis. **Importar preset** preenche os controles; use Prévia ou Aplicar para ativá-las.
+- As alterações aparecem automaticamente. **Salvar** confirma as escolhas; fechar com alterações pendentes oferece **Sair sem salvar** ou **Continuar editando**. O X, Alt+F4 e Escape usam a mesma verificação.
+- **Exportar preset** salva as escolhas em JSON sem alterar os painéis. **Importar preset** preenche os controles e exibe a combinação imediatamente; **Salvar** confirma.
 - Presets incluem aparência, cores, densidade, movimento, seleção dos painéis e escolhas individuais. Arquivos inválidos ou maiores que 64 KB são rejeitados.
 - O campo do chat mantém o contorno do contêiner, sem uma segunda borda ou fundo sobre o editor interno.
 
+## Meus presets
+
+Use **Salvar como** para guardar as escolhas dos controles pelo nome. Selecionar um preset na lista carrega a combinação e atualiza os painéis automaticamente. **Salvar** confirma a configuração ativa; guardar um preset na biblioteca é uma operação separada.
+
+Nomes existentes pedem confirmação para substituir. **Excluir** remove somente o preset escolhido, após confirmação. A biblioteca aceita até 100 presets, com nomes de até 64 caracteres. O arquivo `presets.json` fica junto às preferências e é salvo de forma atômica. Arquivos inválidos são preservados.
+
 ## Escolhas por painel e diagnóstico
 
-Cada painel pode usar sua própria aparência ou **Usar geral**. Chat e Atividades também têm densidade independente. **Sincronizar todos com a configuração geral** limpa as escolhas individuais nos controles; use Prévia ou Aplicar para confirmar. Cores personalizadas usa o conjunto de cores escolhido na parte superior da janela.
+Cada painel pode usar sua própria aparência ou **Usar geral**. Chat e Atividades também têm densidade independente. **Sincronizar todos com a configuração geral** limpa as escolhas individuais e atualiza os painéis; use **Salvar** para confirmar. Cores personalizadas usa o conjunto de cores escolhido na parte superior da janela.
 
 O botão **Diagnóstico dos painéis** mostra a configuração ativa, presença do navegador, cores e densidade efetivas e horário UTC da última verificação. Atualizar reenvia a configuração; Copiar relatório copia o texto ao clicar. O relatório confirma pedidos enviados ao navegador, sem confirmar aceitação do CSS ou resultado visual. Não inclui mensagens, URLs ou contas.
 
@@ -67,6 +75,7 @@ Se o Windows negar escrita em ProgramData, execute o instalador em PowerShell co
 
 - Plugin: `%PROGRAMDATA%\obs-studio\plugins\twitch-dock-themes`
 - Preferências: `%APPDATA%\obs-studio\plugin_config\twitch-dock-themes\settings.ini`
+- Biblioteca: `%APPDATA%\obs-studio\plugin_config\twitch-dock-themes\presets.json`
 - Estilos nativos: `%APPDATA%\obs-studio\themes`
 
 Para desinstalar, feche o OBS e remova somente a pasta `twitch-dock-themes` no destino de plugins acima. Preferências e estilos nativos podem ser mantidos.
@@ -74,12 +83,14 @@ Para desinstalar, feche o OBS e remova somente a pasta `twitch-dock-themes` no d
 ## Validação e limitações
 
 - A versão 0.1 foi testada manualmente pelo usuário no OBS, inclusive com os painéis secundários.
-- A versão 0.4 compilou em Release x64 e carregou em processo de teste com as dependências do OBS instalado.
+- A versão 0.5 compilou em Release x64 e carregou em processo de teste com as dependências do OBS instalado.
 - O teste Qt cobre os quatro painéis, seleção independente, exclusão de outros docks, ativação/restauração, recriação de painéis, paletas, contraste, persistência e migração das preferências. Inclui dez paletas de referência.
 - O teste JavaScript cobre domínio/caminho, aplicação idempotente, remoção, navegação, validação de cores e opção de movimento.
 - As novidades da 0.3 e a correção do campo do chat foram aprovadas em teste manual pelo usuário no OBS. Os testes automatizados usam navegadores simulados; não substituem a conferência visual em outras instalações.
 - Testes adicionais cobrem presets inválidos e antigos, importação/exportação, restauração da prévia, escolhas por painel, reabertura sem reset, recuperação de entradas nulas e diagnóstico.
 - Aparência por painel e correções do feed/reset foram confirmadas pelo usuário no OBS. Essa aprovação corresponde ao uso local; não certifica todas as larguras, tipos de atividade ou extensões.
+
+- A biblioteca de presets, as alterações automáticas e o aviso ao fechar foram aprovados pelo usuário no OBS. Testes Qt também verificam persistência, substituição, exclusão, arquivos inválidos e bloqueio/aceitação do fechamento.
 
 A Twitch pode mudar suas variáveis e seletores. Nem todos os componentes do dashboard necessariamente usam as variáveis sobrescritas. Compatibilidade visual completa com FFZ/BTTV, todas as larguras e todos os estilos ainda não está certificada.
 
