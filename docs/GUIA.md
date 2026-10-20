@@ -7,7 +7,7 @@ Interface em teste, capturada da janela real do plugin em um host Qt simulado no
 
 ## Instalar
 
-1. Use OBS Studio **32.2.2**, Windows x64.
+1. Esta compilação de teste abrange OBS Studio **30.0.0 a 32.2.2**, Windows x64. Confira os limites em [Compatibilidade](COMPATIBILIDADE.md). A release pública 0.5.0 ainda exige 32.2.2.
 2. Baixe o arquivo **Windows.zip** na [release mais recente](https://github.com/moska1m/twitch-dock-themes/releases/latest). O Source.zip é para compilar.
 3. Extraia o ZIP, feche o OBS e execute `Install.ps1` pelo PowerShell. Se houver erro de permissão em ProgramData, use um PowerShell como administrador.
 4. Abra o OBS e acesse **Ferramentas → Twitch Dock Themes**.

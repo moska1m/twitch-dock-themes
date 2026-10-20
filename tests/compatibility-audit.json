@@ -1,0 +1,142 @@
+[
+  {
+    "version": "30.0.0",
+    "browser_commit": "e397df52e70392ebb9146e0ab6317c0d1a30bce4",
+    "browser_virtuals": [
+      "void setURL(const std::string &url) = 0",
+      "void setStartupScript(const std::string &script) = 0",
+      "void allowAllPopups(bool allow) = 0",
+      "void closeBrowser() = 0",
+      "void reloadPage() = 0",
+      "bool zoomPage(int direction) = 0",
+      "void executeJavaScript(const std::string &script) = 0"
+    ],
+    "frontend_event_indices": {
+      "OBS_FRONTEND_EVENT_EXIT": 17,
+      "OBS_FRONTEND_EVENT_FINISHED_LOADING": 26,
+      "OBS_FRONTEND_EVENT_THEME_CHANGED": 39
+    },
+    "dock_source_url": "https://raw.githubusercontent.com/obsproject/obs-studio/30.0.0/UI/auth-twitch.cpp",
+    "dock_ids_present": true
+  },
+  {
+    "version": "30.2.3",
+    "browser_commit": "c710222ec9d7ef9aa5d7099e9019d636e2c89f00",
+    "browser_virtuals": [
+      "void setURL(const std::string &url) = 0",
+      "void setStartupScript(const std::string &script) = 0",
+      "void allowAllPopups(bool allow) = 0",
+      "void closeBrowser() = 0",
+      "void reloadPage() = 0",
+      "bool zoomPage(int direction) = 0",
+      "void executeJavaScript(const std::string &script) = 0"
+    ],
+    "frontend_event_indices": {
+      "OBS_FRONTEND_EVENT_EXIT": 17,
+      "OBS_FRONTEND_EVENT_FINISHED_LOADING": 26,
+      "OBS_FRONTEND_EVENT_THEME_CHANGED": 39
+    },
+    "dock_source_url": "https://raw.githubusercontent.com/obsproject/obs-studio/30.2.3/UI/auth-twitch.cpp",
+    "dock_ids_present": true
+  },
+  {
+    "version": "31.0.0",
+    "browser_commit": "a76b4d8810a0a33e91ac5b76a0b1af2f22bf8efd",
+    "browser_virtuals": [
+      "void setURL(const std::string &url) = 0",
+      "void setStartupScript(const std::string &script) = 0",
+      "void allowAllPopups(bool allow) = 0",
+      "void closeBrowser() = 0",
+      "void reloadPage() = 0",
+      "bool zoomPage(int direction) = 0",
+      "void executeJavaScript(const std::string &script) = 0"
+    ],
+    "frontend_event_indices": {
+      "OBS_FRONTEND_EVENT_EXIT": 17,
+      "OBS_FRONTEND_EVENT_FINISHED_LOADING": 26,
+      "OBS_FRONTEND_EVENT_THEME_CHANGED": 39
+    },
+    "dock_source_url": "https://raw.githubusercontent.com/obsproject/obs-studio/31.0.0/UI/auth-twitch.cpp",
+    "dock_ids_present": true
+  },
+  {
+    "version": "31.1.2",
+    "browser_commit": "bdabf8300ecefeb566b81f4a7ff75f8a8e21f62b",
+    "browser_virtuals": [
+      "void setURL(const std::string &url) = 0",
+      "void setStartupScript(const std::string &script) = 0",
+      "void allowAllPopups(bool allow) = 0",
+      "void closeBrowser() = 0",
+      "void reloadPage() = 0",
+      "bool zoomPage(int direction) = 0",
+      "void executeJavaScript(const std::string &script) = 0"
+    ],
+    "frontend_event_indices": {
+      "OBS_FRONTEND_EVENT_EXIT": 17,
+      "OBS_FRONTEND_EVENT_FINISHED_LOADING": 26,
+      "OBS_FRONTEND_EVENT_THEME_CHANGED": 39
+    },
+    "dock_source_url": "https://raw.githubusercontent.com/obsproject/obs-studio/31.1.2/frontend/oauth/TwitchAuth.cpp",
+    "dock_ids_present": true
+  },
+  {
+    "version": "32.0.0",
+    "browser_commit": "37d847fc348d635a6c95fab348c08e45e0aad9d3",
+    "browser_virtuals": [
+      "void setURL(const std::string &url) = 0",
+      "void setStartupScript(const std::string &script) = 0",
+      "void allowAllPopups(bool allow) = 0",
+      "void closeBrowser() = 0",
+      "void reloadPage() = 0",
+      "bool zoomPage(int direction) = 0",
+      "void executeJavaScript(const std::string &script) = 0"
+    ],
+    "frontend_event_indices": {
+      "OBS_FRONTEND_EVENT_EXIT": 17,
+      "OBS_FRONTEND_EVENT_FINISHED_LOADING": 26,
+      "OBS_FRONTEND_EVENT_THEME_CHANGED": 39
+    },
+    "dock_source_url": "https://raw.githubusercontent.com/obsproject/obs-studio/32.0.0/frontend/oauth/TwitchAuth.cpp",
+    "dock_ids_present": true
+  },
+  {
+    "version": "32.1.0",
+    "browser_commit": "ea04212e4bbadd077f9e6038758c4e4779c24fa3",
+    "browser_virtuals": [
+      "void setURL(const std::string &url) = 0",
+      "void setStartupScript(const std::string &script) = 0",
+      "void allowAllPopups(bool allow) = 0",
+      "void closeBrowser() = 0",
+      "void reloadPage() = 0",
+      "bool zoomPage(int direction) = 0",
+      "void executeJavaScript(const std::string &script) = 0"
+    ],
+    "frontend_event_indices": {
+      "OBS_FRONTEND_EVENT_EXIT": 17,
+      "OBS_FRONTEND_EVENT_FINISHED_LOADING": 26,
+      "OBS_FRONTEND_EVENT_THEME_CHANGED": 39
+    },
+    "dock_source_url": "https://raw.githubusercontent.com/obsproject/obs-studio/32.1.0/frontend/oauth/TwitchAuth.cpp",
+    "dock_ids_present": true
+  },
+  {
+    "version": "32.2.2",
+    "browser_commit": "3f0a2cdf378939ebe3c6f9ab36d4ea100c25aac2",
+    "browser_virtuals": [
+      "void setURL(const std::string &url) = 0",
+      "void setStartupScript(const std::string &script) = 0",
+      "void allowAllPopups(bool allow) = 0",
+      "void closeBrowser() = 0",
+      "void reloadPage() = 0",
+      "bool zoomPage(int direction) = 0",
+      "void executeJavaScript(const std::string &script) = 0"
+    ],
+    "frontend_event_indices": {
+      "OBS_FRONTEND_EVENT_EXIT": 17,
+      "OBS_FRONTEND_EVENT_FINISHED_LOADING": 26,
+      "OBS_FRONTEND_EVENT_THEME_CHANGED": 39
+    },
+    "dock_source_url": "https://raw.githubusercontent.com/obsproject/obs-studio/32.2.2/frontend/oauth/TwitchAuth.cpp",
+    "dock_ids_present": true
+  }
+]

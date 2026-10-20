@@ -1,0 +1,26 @@
+[
+  {
+    "obs": "30.0.0",
+    "obsApi": "0x1e000000",
+    "qt": "6.5.3",
+    "compiledObsApi": "0x1e000000",
+    "dllLoad": true,
+    "controllerAndUiTests": true
+  },
+  {
+    "obs": "31.0.0",
+    "obsApi": "0x1f000000",
+    "qt": "6.6.3",
+    "compiledObsApi": "0x1e000000",
+    "dllLoad": true,
+    "controllerAndUiTests": true
+  },
+  {
+    "obs": "32.2.2",
+    "obsApi": "0x20020002",
+    "qt": "6.11.1",
+    "compiledObsApi": "0x1e000000",
+    "dllLoad": true,
+    "controllerAndUiTests": true
+  }
+]

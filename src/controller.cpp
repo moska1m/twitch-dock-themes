@@ -186,7 +186,7 @@ int ThemeController::dispatch(bool active)
         const auto applyScript = script(active, palette(settings["mode"].toString()), motion, panelDensity, dock->objectName()).toUtf8().toStdString();
         for (auto *widget : dock->findChildren<QWidget *>()) {
             if (!widget->inherits("QCefWidget")) continue;
-            // ABI is pinned to OBS 32.2.2 / browser panel API 3.
+            // QCefWidget layout audited in OBS 30.0.0 through 32.2.2; browser API 3 checked before use.
             auto *browser = static_cast<QCefWidget *>(widget);
             browser->executeJavaScript(active && selected ? applyScript : removeScript);
             found.insert(dock->objectName());

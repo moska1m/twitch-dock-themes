@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 3.28)
 project(TwitchDockThemes VERSION 0.5.0 LANGUAGES C CXX)
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
-find_package(Qt6 6.11.1 EXACT REQUIRED COMPONENTS Core Gui Widgets)
+find_package(Qt6 6.5.3 EXACT REQUIRED COMPONENTS Core Gui Widgets)
 set_property(DIRECTORY APPEND PROPERTY CMAKE_CONFIGURE_DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/src/bridge.js")
 if(NOT BROWSER_HEADER_DIR)
   set(BROWSER_HEADER_DIR "${CMAKE_CURRENT_SOURCE_DIR}/vendor")
@@ -17,6 +17,7 @@ file(WRITE "${CMAKE_BINARY_DIR}/generated/bridge-generated.hpp" "#pragma once\ni
 add_library(obs_import INTERFACE)
 target_include_directories(obs_import INTERFACE
   "${OBS_SOURCE_DIR}/libobs" "${OBS_SOURCE_DIR}/frontend/api"
+  "${OBS_SOURCE_DIR}/UI/obs-frontend-api"
   "${BROWSER_HEADER_DIR}" "${CMAKE_BINARY_DIR}/generated")
 add_library(twitch-dock-themes MODULE src/plugin.cpp src/controller.cpp)
 target_link_libraries(twitch-dock-themes PRIVATE obs_import Qt6::Widgets

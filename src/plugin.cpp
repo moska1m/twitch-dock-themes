@@ -35,6 +35,7 @@
 #include <QScopedValueRollback>
 #include <QFormLayout>
 #include <QToolButton>
+#include <QVersionNumber>
 
 OBS_DECLARE_MODULE()
 MODULE_EXPORT const char *obs_module_name(void) { return "Twitch Dock Themes"; }
@@ -373,8 +374,17 @@ static void frontendEvent(enum obs_frontend_event event, void *)
 
 bool obs_module_load(void)
 {
-    if (obs_get_version() != LIBOBS_API_VER) {
-        blog(LOG_WARNING, "[twitch-dock-themes] Build 0.5.0 requires OBS 32.2.2.");
+    // Compile against the oldest supported OBS and Qt to keep imports backwards compatible.
+    static_assert(LIBOBS_API_VER == MAKE_SEMANTIC_VERSION(30, 0, 0), "Use OBS 30.0.0 headers for the compatibility build");
+    static_assert(QT_VERSION == QT_VERSION_CHECK(6, 5, 3), "Use Qt 6.5.3 for the compatibility build");
+    const auto version = obs_get_version();
+    if (version < MAKE_SEMANTIC_VERSION(30, 0, 0) || version > MAKE_SEMANTIC_VERSION(32, 2, 2)) {
+        blog(LOG_WARNING, "[twitch-dock-themes] Compatibility build supports OBS 30.0.0 through 32.2.2; detected %s.", obs_get_version_string());
+        return false;
+    }
+    const auto qt = QVersionNumber::fromString(QString::fromLatin1(qVersion()));
+    if (qt.majorVersion() != 6 || qt < QVersionNumber(6, 5, 3)) {
+        blog(LOG_WARNING, "[twitch-dock-themes] Unsupported Qt runtime: %s.", qVersion());
         return false;
     }
     return true;
@@ -398,7 +408,7 @@ void obs_module_post_load(void)
     menuAction = static_cast<QAction *>(obs_frontend_add_tools_menu_qaction("Twitch Dock Themes"));
     if (menuAction) QObject::connect(menuAction, &QAction::triggered, controller, []() { openSettings(); });
     obs_frontend_add_event_callback(frontendEvent, nullptr);
-    blog(LOG_INFO, "[twitch-dock-themes] 0.5.0 experimental compact-settings loaded; mode=%s.", controller->mode.toUtf8().constData());
+    blog(LOG_INFO, "[twitch-dock-themes] 0.5.0 experimental compatibility loaded; mode=%s.", controller->mode.toUtf8().constData());
 }
 
 void obs_module_unload(void)

@@ -2,7 +2,7 @@
 
 Aparência integrada para os quatro painéis da Twitch no OBS Studio, com cores do OBS ou dos estilos Obsidian e Obsidian Graphite.
 
-**Windows x64 · OBS Studio 32.2.2 · Qt 6.11.1 · browser panel API 3.** Esta compilação recusa outras versões do OBS. Usa a interface C++ do obs-browser e precisa ser recompilada e verificada quando essa interface mudar.
+**Compilação de compatibilidade em teste: Windows x64 · OBS 30.0.0 a 32.2.2 · Qt 6.5.3 ou superior da série 6 · browser panel API 3.** Compilada com OBS 30.0.0 / Qt 6.5.3. DLL e testes de interface verificados com bibliotecas dos OBS 30.0.0, 31.0.0 e 32.2.2. A Twitch autenticada nas versões antigas ainda precisa de validação visual. [Matriz e limites](docs/COMPATIBILIDADE.md).
 
 ## Instalar e usar
 
@@ -31,7 +31,7 @@ Instalações novas começam em modo automático com os quatro painéis habilita
 
 O modo automático pode acompanhar Default, Acri, Classic, Grey, Light, Rachni e estilos personalizados. É uma aproximação da paleta; regras QSS específicas, imagens e efeitos do tema nativo não são convertidos. Contraste dos botões e links recebe tratamento próprio.
 
-Inclui os estilos nativos `Obsidian.ovt` e `Obsidian Graphite.ovt`. O instalador adiciona os que ainda não existem. Escolha-os nas configurações de Aparência do OBS. Fonte e densidade nativas continuam sob controle do OBS; o conteúdo web da Twitch mantém seu próprio dimensionamento. O plugin não troca a família da fonte nem impõe altura fixa aos painéis. A densidade de Atividades pode alterar o tamanho do texto.
+Os estilos nativos incluídos foram validados no OBS 32.2.2; sua compatibilidade nas versões antigas é separada da aparência dos painéis web. Inclui os estilos nativos `Obsidian.ovt` e `Obsidian Graphite.ovt`. O instalador adiciona os que ainda não existem. Escolha-os nas configurações de Aparência do OBS. Fonte e densidade nativas continuam sob controle do OBS; o conteúdo web da Twitch mantém seu próprio dimensionamento. O plugin não troca a família da fonte nem impõe altura fixa aos painéis. A densidade de Atividades pode alterar o tamanho do texto.
 
 ## Densidade, alterações automáticas e presets
 
@@ -96,12 +96,12 @@ A Twitch pode mudar suas variáveis e seletores. Nem todos os componentes do das
 
 ## Compilar e testar
 
-Dependências: Visual Studio 2022 com C++, SDK Windows, CMake 3.28+, Qt **6.11.1** x64 MSVC, código-fonte do OBS na tag **32.2.2**, Node.js para os testes JavaScript e Python para o helper de importação.
+Dependências: Visual Studio 2022 com C++, SDK Windows, CMake 3.28+, Qt **6.5.3** x64 MSVC, código-fonte do OBS na tag **30.0.0**, Node.js para os testes JavaScript e Python para o helper de importação.
 
-Use o terminal **x64 Native Tools Command Prompt for VS 2022**. Se não tiver as bibliotecas de importação do OBS, gere-as a partir das DLLs da instalação 32.2.2:
+Use o terminal **x64 Native Tools Command Prompt for VS 2022**. Se não tiver as bibliotecas de importação do OBS, gere-as a partir das DLLs de uma cópia do OBS 30.0.0:
 
 ```powershell
-python scripts/generate-imports.py --obs-bin "C:/Program Files/obs-studio/bin/64bit" --output build/imports
+python scripts/generate-imports.py --obs-bin "CAMINHO_OBS_30/bin/64bit" --output build/imports
 cmake -S . -B build -G "Visual Studio 17 2022" -A x64 -DCMAKE_PREFIX_PATH="CAMINHO_QT" -DOBS_SOURCE_DIR="CAMINHO_OBS" -DOBS_IMPORT_DIR="CAMINHO_ABSOLUTO/build/imports"
 cmake --build build --config Release
 node tests/bridge.test.cjs

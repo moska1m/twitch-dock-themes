@@ -32,4 +32,4 @@ foreach ($theme in @('Obsidian.ovt','Obsidian Graphite.ovt')) {
         Copy-Item -LiteralPath (Join-Path (Join-Path $PSScriptRoot 'themes') $theme) -Destination $target
     }
 }
-Write-Output 'Instalado. Reabra o OBS 32.2.2 e acesse Ferramentas > Twitch Dock Themes.'
+Write-Output 'Instalado. Reabra o OBS e acesse Ferramentas > Twitch Dock Themes.'
