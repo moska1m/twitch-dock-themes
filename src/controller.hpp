@@ -26,13 +26,14 @@ public:
     QSet<QString> found;
     int lastFound = 0;
     static QStringList dockIds();
+    static bool supportsDensity(const QString &id);
     void loadSettings(QSettings &settings);
     void saveSettings(QSettings &settings) const;
     void resetPreferences();
     void apply();
     void remove();
     QJsonObject palette(const QString &modeOverride = {}) const;
-    static QString script(bool enabled, const QJsonObject &palette, bool motion = true, const QString &density = "standard");
+    static QString script(bool enabled, const QJsonObject &palette, bool motion = true, const QString &density = "standard", const QString &panel = "twitchChat");
 private:
     QPointer<QWidget> main;
     QTimer timer;

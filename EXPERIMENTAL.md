@@ -1,9 +1,9 @@
 # Teste: aparência e densidade por painel
 
-Base: versão 0.3.0. Esta compilação acrescenta escolhas independentes para Chat, Informações, Atividades e Estatísticas.
+Base: versão 0.3.0. Esta compilação acrescenta aparência independente para os quatro painéis e densidade somente para Chat e Atividades.
 
 1. Abra Ferramentas → Twitch Dock Themes.
-2. Na seção Painéis, escolha Aparência e Densidade em cada linha.
+2. Na seção Painéis, escolha Aparência em cada linha. Densidade está disponível somente para Chat e Atividades.
 3. Usar geral acompanha a configuração geral daquela propriedade. Você pode sobrescrever somente a densidade ou somente a aparência.
 4. Use Prévia nos painéis; Fechar desfaz a prévia e Aplicar e salvar confirma.
 5. Sincronizar todos com a configuração geral limpa as escolhas individuais nos controles. Use Prévia ou Aplicar para confirmar.
@@ -23,3 +23,11 @@ O botão Diagnóstico dos painéis abre um relatório da configuração ativa, i
 O relatório não lê mensagens, URLs, contas ou credenciais. Indica pedidos de aplicação/remoção enviados ao navegador, sem afirmar que o CSS foi aceito ou que o resultado visual está correto. A interface de browser utilizada não oferece retorno de execução desse JavaScript.
 
 Testes adicionais cobrem relatório de envio, desativação, painel removido, herança de aparência/densidade e ausência de confirmação visual indevida.
+
+## Correções: reabrir preferências e densidade de atividades
+
+- A consulta a um painel que usava o geral inseria entradas nulas no objeto de preferências. Elas faziam a reabertura rejeitar o estado. As consultas agora não alteram o objeto, e entradas nulas antigas são descartadas preservando escolhas válidas.
+- Densidade removida dos controles de Informações e Estatísticas; presets antigos com essas escolhas são normalizados para o padrão nesses painéis.
+- Atividades usa regras específicas para `activity-list-layout` e `activity-base-list-item`, verificadas no JavaScript público da Twitch em 20/10/2026. Compacta usa fonte de 12 px e espaçamento reduzido; Confortável usa 14 px e espaçamento maior; Padrão remove as regras de densidade.
+- Não são impostos limites de altura nem ocultados botões, mensagens ou detalhes das atividades. A conferência visual deve incluir o feed estreito e atividades com texto longo.
+- Testes de regressão: aplicar não modifica preferências; reabertura mantém escolhas; entradas nulas são recuperadas; densidade não afeta Informações/Estatísticas; troca para Padrão remove ajustes.

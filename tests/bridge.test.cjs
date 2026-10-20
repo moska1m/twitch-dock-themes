@@ -14,8 +14,8 @@ const document = {
   },
   head: { appendChild: el => elements.set(el.id, el) },
 };
-function run(enabled, hostname = "www.twitch.tv", pathname = "/popout/example/chat", colors = palette, protocol = "https:", motion = true, density = "standard") {
-  return vm.runInNewContext(source.replace("__CONFIG__", JSON.stringify({ enabled, palette: colors, motion, density })),
+function run(enabled, hostname = "www.twitch.tv", pathname = "/popout/example/chat", colors = palette, protocol = "https:", motion = true, density = "standard", panel = "twitchChat") {
+  return vm.runInNewContext(source.replace("__CONFIG__", JSON.stringify({ enabled, palette: colors, motion, density, panel })),
     { document, location: { hostname, pathname, protocol } });
 }
 assert.equal(run(true), "applied");
@@ -60,3 +60,19 @@ assert.ok(chatCss.includes('[data-a-target="chat-input"]:is(textarea, [contented
 assert.ok(chatCss.includes("background: transparent !important;"));
 assert.ok(chatCss.includes("box-shadow: none !important;"));
 console.log("PASS: chat editor is transparent; container retains native focus styling");
+
+const feedPath = "/popout/u/example/stream-manager/activity-feed";
+run(true, "dashboard.twitch.tv", feedPath, palette, "https:", true, "compact", "twitchFeed");
+let feedCss = elements.values().next().value.textContent;
+assert.ok(feedCss.includes(".activity-list-layout .activity-base-list-item"));
+assert.ok(feedCss.includes("font-size: 12px !important"));
+assert.ok(!feedCss.includes(".chat-input { padding:"));
+run(true, "dashboard.twitch.tv", feedPath, palette, "https:", true, "comfortable", "twitchFeed");
+assert.ok(elements.values().next().value.textContent.includes("font-size: 14px !important"));
+for (const panel of ["twitchInfo", "twitchStats"]) {
+  run(true, "dashboard.twitch.tv", feedPath, palette, "https:", true, "compact", panel);
+  assert.ok(!elements.values().next().value.textContent.includes("padding-top:"));
+}
+run(true, "dashboard.twitch.tv", feedPath, palette, "https:", true, "standard", "twitchFeed");
+assert.ok(!elements.values().next().value.textContent.includes("font-size:"));
+console.log("PASS: activity feed density, font size, standard reset, info/stats exclusion");

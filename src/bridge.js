@@ -21,12 +21,25 @@
   if (!p || !required.every(k => typeof p[k] === "string" && /^#[0-9a-f]{6}$/i.test(p[k])))
     return "invalid-palette";
   const spacing = new Map([["compact", ["2px", "4px"]], ["comfortable", ["8px", "10px"]]]).get(config.density);
-  const densityCss = spacing ? `
+  const isChat = config.panel === "twitchChat" && /\/chat\/?$/.test(location.pathname);
+  const isFeed = config.panel === "twitchFeed" && /\/activity-feed\/?$/.test(location.pathname);
+  const chatDensity = spacing && isChat ? `
 .chat-line__message { padding-top: ${spacing[0]} !important; padding-bottom: ${spacing[0]} !important; }
 .chat-input { padding: ${spacing[1]} !important; }
-textarea:not([aria-invalid="true"]), input:is([type="text"], [type="search"], [type="number"], [type="url"]):not([aria-invalid="true"]) {
-  padding-top: ${spacing[1]} !important; padding-bottom: ${spacing[1]} !important;
-}` : "";
+.chat-input textarea { padding-top: ${spacing[1]} !important; padding-bottom: ${spacing[1]} !important; }
+` : "";
+  // Stable activity classes verified in Twitch's public activity-feed bundle.
+  const compact = config.density === "compact";
+  const feedDensity = spacing && isFeed ? `
+.activity-list-layout .activity-base-list-item { padding-left: ${compact ? "6px" : "16px"} !important; padding-right: ${compact ? "6px" : "16px"} !important; }
+.activity-list-layout .activity-base-list-item > div { padding-top: ${compact ? "4px" : "12px"} !important; padding-bottom: ${compact ? "4px" : "10px"} !important; }
+.activity-list-layout .activity-base-list-item :is(p, span) { font-size: ${compact ? "12px" : "14px"} !important; line-height: ${compact ? "1.3" : "1.5"} !important; }
+.activity-list-layout .activity-base-list-item__title { min-width: 0 !important; }
+.activity-list-layout .activity-base-list-item__title p { word-break: normal !important; overflow-wrap: anywhere !important; }
+.activity-list-layout .activity-base-list-item__subtitle { padding-left: ${compact ? "0" : "24px"} !important; }
+.activity-list-layout .activity-base-list-item__icon { margin-right: ${compact ? "4px" : "10px"} !important; }
+` : "";
+  const densityCss = chatDensity + feedDensity;
   const css = `
 ${densityCss}
 :root, .tw-root--theme-dark, .tw-root--theme-light {

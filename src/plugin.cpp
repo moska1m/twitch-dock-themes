@@ -86,26 +86,27 @@ static void openSettings()
     int row = 1;
     grid->addWidget(new QLabel("Painel"), 0, 0);
     grid->addWidget(new QLabel("Aparência"), 0, 1);
-    grid->addWidget(new QLabel("Densidade"), 0, 2);
+    grid->addWidget(new QLabel("Densidade (chat e atividades)"), 0, 2);
     for (const auto &id : ThemeController::dockIds()) {
         checks[id] = new QCheckBox(names.value(id)); states[id] = new QLabel;
-        auto *pm = new QComboBox; auto *pd = new QComboBox;
+        auto *pm = new QComboBox;
+        auto *pd = ThemeController::supportsDensity(id) ? new QComboBox : nullptr;
         pm->addItem("Usar geral", ""); pm->addItem("Paleta do OBS", "follow");
         pm->addItem("Obsidian", "obsidian"); pm->addItem("Obsidian Graphite", "graphite");
         pm->addItem("Cores personalizadas", "custom");
-        pd->addItem("Usar geral", ""); pd->addItem("Compacta", "compact");
-        pd->addItem("Padrão da Twitch", "standard"); pd->addItem("Confortável", "comfortable");
+        if (pd) { pd->addItem("Usar geral", ""); pd->addItem("Compacta", "compact");
+        pd->addItem("Padrão da Twitch", "standard"); pd->addItem("Confortável", "comfortable"); }
         pm->setToolTip("Cores personalizadas usa as cores escolhidas acima.");
-        panelModes[id] = pm; panelDensities[id] = pd;
+        panelModes[id] = pm; if (pd) panelDensities[id] = pd;
         grid->addWidget(checks[id], row, 0); grid->addWidget(pm, row, 1);
-        grid->addWidget(pd, row, 2); grid->addWidget(states[id], row++, 3);
-        QObject::connect(checks[id], &QCheckBox::toggled, &d, [pm, pd](bool on) { pm->setEnabled(on); pd->setEnabled(on); });
+        if (pd) grid->addWidget(pd, row, 2); else grid->addWidget(new QLabel("—"), row, 2); grid->addWidget(states[id], row++, 3);
+        QObject::connect(checks[id], &QCheckBox::toggled, &d, [pm, pd](bool on) { pm->setEnabled(on); if (pd) pd->setEnabled(on); });
     }
     auto *syncPanels = new QPushButton("Sincronizar todos com a configuração geral");
     grid->addWidget(syncPanels, row, 0, 1, 4);
     QObject::connect(syncPanels, &QPushButton::clicked, &d, [&]() {
         for (const auto &id : ThemeController::dockIds()) {
-            panelModes[id]->setCurrentIndex(0); panelDensities[id]->setCurrentIndex(0);
+            panelModes[id]->setCurrentIndex(0); if (panelDensities.contains(id)) panelDensities[id]->setCurrentIndex(0);
         }
     });
     auto *motion = new QCheckBox("Transição suave ao passar o mouse");
@@ -123,7 +124,7 @@ static void openSettings()
     buttons->button(QDialogButtonBox::Close)->setText("Fechar");
     auto *reset = new QPushButton("Desativar e restaurar Twitch");
     layout->addWidget(enabled); layout->addWidget(new QLabel("Aparência")); layout->addWidget(mode);
-    layout->addWidget(colors); layout->addWidget(new QLabel("Densidade")); layout->addWidget(density);
+    layout->addWidget(colors); layout->addWidget(new QLabel("Densidade (chat e atividades)")); layout->addWidget(density);
     layout->addWidget(panelBox); layout->addWidget(motion); layout->addLayout(presetRow);
     layout->addWidget(diagnostic);
     layout->addWidget(status); layout->addWidget(preview); layout->addWidget(reset); layout->addWidget(buttons);
@@ -137,10 +138,10 @@ static void openSettings()
         mode->setCurrentIndex(mode->findData(draft.mode)); density->setCurrentIndex(density->findData(draft.density));
         for (const auto &id : ThemeController::dockIds()) {
             checks[id]->setChecked(draft.panels.value(id));
-            const auto item = draft.overrides[id].toObject();
+            const auto item = draft.overrides.value(id).toObject();
             panelModes[id]->setCurrentIndex(qMax(0, panelModes[id]->findData(item["mode"].toString())));
-            panelDensities[id]->setCurrentIndex(qMax(0, panelDensities[id]->findData(item["density"].toString())));
-            panelModes[id]->setEnabled(checks[id]->isChecked()); panelDensities[id]->setEnabled(checks[id]->isChecked());
+            if (panelDensities.contains(id)) panelDensities[id]->setCurrentIndex(qMax(0, panelDensities[id]->findData(item["density"].toString())));
+            panelModes[id]->setEnabled(checks[id]->isChecked()); if (panelDensities.contains(id)) panelDensities[id]->setEnabled(checks[id]->isChecked());
         }
         const auto c = draft.preset()["colors"].toObject();
         for (auto it = colorButtons.begin(); it != colorButtons.end(); ++it) {
@@ -160,7 +161,7 @@ static void openSettings()
             draft.panels[id] = checks[id]->isChecked();
             QJsonObject item;
             if (!panelModes[id]->currentData().toString().isEmpty()) item["mode"] = panelModes[id]->currentData().toString();
-            if (!panelDensities[id]->currentData().toString().isEmpty()) item["density"] = panelDensities[id]->currentData().toString();
+            if (panelDensities.contains(id) && !panelDensities[id]->currentData().toString().isEmpty()) item["density"] = panelDensities[id]->currentData().toString();
             if (!item.isEmpty()) draft.overrides[id] = item;
         }
     };
@@ -285,7 +286,7 @@ void obs_module_post_load(void)
     menuAction = static_cast<QAction *>(obs_frontend_add_tools_menu_qaction("Twitch Dock Themes"));
     if (menuAction) QObject::connect(menuAction, &QAction::triggered, controller, []() { openSettings(); });
     obs_frontend_add_event_callback(frontendEvent, nullptr);
-    blog(LOG_INFO, "[twitch-dock-themes] 0.3.0 experimental diagnostics loaded; mode=%s.", controller->mode.toUtf8().constData());
+    blog(LOG_INFO, "[twitch-dock-themes] 0.3.0 experimental density-fix loaded; mode=%s.", controller->mode.toUtf8().constData());
 }
 
 void obs_module_unload(void)

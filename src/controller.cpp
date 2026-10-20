@@ -30,6 +30,11 @@ QStringList ThemeController::dockIds()
     return {"twitchChat", "twitchInfo", "twitchFeed", "twitchStats"};
 }
 
+bool ThemeController::supportsDensity(const QString &id)
+{
+    return id == "twitchChat" || id == "twitchFeed";
+}
+
 void ThemeController::resetPreferences()
 {
     overrides = {};
@@ -61,7 +66,7 @@ void ThemeController::loadSettings(QSettings &s)
         const auto item = stored[id].toObject();
         QJsonObject valid;
         if (QStringList{"follow", "obsidian", "graphite", "custom"}.contains(item["mode"].toString())) valid["mode"] = item["mode"];
-        if (QStringList{"compact", "standard", "comfortable"}.contains(item["density"].toString())) valid["density"] = item["density"];
+        if (supportsDensity(id) && QStringList{"compact", "standard", "comfortable"}.contains(item["density"].toString())) valid["density"] = item["density"];
         if (!valid.isEmpty()) overrides[id] = valid;
     }
     const bool legacy = !s.contains("schema") && s.contains("secondary");
@@ -156,10 +161,10 @@ QJsonObject ThemeController::palette(const QString &modeOverride) const
     };
 }
 
-QString ThemeController::script(bool active, const QJsonObject &colors, bool motion, const QString &density)
+QString ThemeController::script(bool active, const QJsonObject &colors, bool motion, const QString &density, const QString &panel)
 {
     QString result = QString::fromUtf8(bridgeScript);
-    const QJsonObject config{{"enabled", active}, {"palette", colors}, {"motion", motion}, {"density", density}};
+    const QJsonObject config{{"enabled", active}, {"palette", colors}, {"motion", motion}, {"density", density}, {"panel", panel}};
     result.replace("__CONFIG__", QString::fromUtf8(QJsonDocument(config).toJson(QJsonDocument::Compact)));
     return result;
 }
@@ -176,9 +181,9 @@ int ThemeController::dispatch(bool active)
     for (auto *dock : main->findChildren<QDockWidget *>()) {
         if (!panels.contains(dock->objectName())) continue;
         const bool selected = panels.value(dock->objectName(), false);
-        const auto settings = overrides[dock->objectName()].toObject();
-        const auto panelDensity = settings["density"].toString(density);
-        const auto applyScript = script(active, palette(settings["mode"].toString()), motion, panelDensity).toUtf8().toStdString();
+        const auto settings = overrides.value(dock->objectName()).toObject();
+        const auto panelDensity = supportsDensity(dock->objectName()) ? settings["density"].toString(density) : QString("standard");
+        const auto applyScript = script(active, palette(settings["mode"].toString()), motion, panelDensity, dock->objectName()).toUtf8().toStdString();
         for (auto *widget : dock->findChildren<QWidget *>()) {
             if (!widget->inherits("QCefWidget")) continue;
             // ABI is pinned to OBS 32.2.2 / browser panel API 3.
@@ -220,10 +225,12 @@ bool ThemeController::setPreset(const QJsonObject &v, QString *error)
     QJsonObject incoming;
     if (v["version"] == 2) {
         if (!v["overrides"].isObject()) return fail();
-        incoming = v["overrides"].toObject();
-        for (auto it = incoming.begin(); it != incoming.end(); ++it) {
-            if (!dockIds().contains(it.key()) || !it.value().isObject()) return fail();
-            const auto item = it.value().toObject();
+        const auto raw = v["overrides"].toObject();
+        for (auto it = raw.begin(); it != raw.end(); ++it) {
+            if (!dockIds().contains(it.key())) return fail();
+            if (it.value().isNull()) continue; // Recover presets affected by the old mutating lookup.
+            if (!it.value().isObject()) return fail();
+            auto item = it.value().toObject();
             for (auto field = item.begin(); field != item.end(); ++field) {
                 if (field.key() == "mode") {
                     if (!QStringList{"follow", "obsidian", "graphite", "custom"}.contains(field.value().toString())) return fail();
@@ -231,6 +238,8 @@ bool ThemeController::setPreset(const QJsonObject &v, QString *error)
                     if (!QStringList{"compact", "standard", "comfortable"}.contains(field.value().toString())) return fail();
                 } else return fail();
             }
+            if (!supportsDensity(it.key())) item.remove("density");
+            if (!item.isEmpty()) incoming[it.key()] = item;
         }
     }
     overrides = incoming;
@@ -244,11 +253,12 @@ QJsonObject ThemeController::diagnostics() const
 {
     QJsonArray items;
     for (const auto &id : dockIds()) {
-        const auto item = overrides[id].toObject();
+        const auto item = overrides.value(id).toObject();
         const QString effectiveMode = item["mode"].toString(mode);
         items.append(QJsonObject{{"panel", id}, {"browserFound", found.contains(id)},
             {"selected", panels.value(id, false)}, {"mode", effectiveMode},
-            {"density", item["density"].toString(density)},
+            {"density", supportsDensity(id) ? item["density"].toString(density) : QString("standard")},
+            {"densitySupported", supportsDensity(id)},
             {"request", requests.value(id, "none")},
             {"colors", palette(effectiveMode)}});
     }
