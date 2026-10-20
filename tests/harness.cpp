@@ -119,7 +119,7 @@ int main(int argc, char **argv) try
     check(!controller.setPreset(bad) && controller.preset() == custom, "Invalid colors mutated state");
     bad = custom; bad["panels"] = QJsonObject{};
     check(!controller.setPreset(bad), "Incomplete panel selection accepted");
-    bad = custom; bad["version"] = 2;
+    bad = custom; bad["version"] = 3;
     check(!controller.setPreset(bad), "Future preset accepted");
     const auto encoded = QJsonDocument(custom).toJson();
     check(controller.setPreset(QJsonDocument::fromJson(encoded).object()), "Export/import roundtrip failed");
@@ -127,6 +127,29 @@ int main(int argc, char **argv) try
     controller.apply();
     check(chatBrowser->last.find("\"density\":\"compact\"") != std::string::npos, "Density missing from bridge");
     check(controller.setPreset(saved) && controller.preset() == saved, "Preview snapshot restoration failed");
+
+    auto separate = saved;
+    separate["enabled"] = true; separate["mode"] = "obsidian";
+    separate["panels"] = QJsonObject{{"twitchChat", true}, {"twitchInfo", true}, {"twitchFeed", true}, {"twitchStats", true}};
+    separate["overrides"] = QJsonObject{{"twitchChat", QJsonObject{{"mode", "graphite"}, {"density", "compact"}}},
+        {"twitchInfo", QJsonObject{{"density", "comfortable"}}}};
+    check(controller.setPreset(separate), "Per-panel preset rejected");
+    controller.apply();
+    check(chatBrowser->last.find("#26262b") != std::string::npos, "Chat appearance override missing");
+    check(chatBrowser->last.find("\"density\":\"compact\"") != std::string::npos, "Chat density override missing");
+    check(newBrowser->last.find("#18181b") != std::string::npos, "Info did not inherit global palette");
+    check(newBrowser->last.find("\"density\":\"comfortable\"") != std::string::npos, "Info density override missing");
+    check(feedBrowser->last.find("#18181b") != std::string::npos, "Override leaked to unrelated panel");
+    controller.saveSettings(settings); controller.resetPreferences(); controller.loadSettings(settings);
+    check(controller.preset() == separate, "Override persistence failed");
+    auto invalidOverrides = separate;
+    invalidOverrides["overrides"] = QJsonObject{{"customBrowser", QJsonObject{{"mode", "graphite"}}}};
+    check(!controller.setPreset(invalidOverrides) && controller.preset() == separate, "Unknown panel override accepted");
+    invalidOverrides["overrides"] = QJsonObject{{"twitchChat", QJsonObject{{"density", "invalid"}}}};
+    check(!controller.setPreset(invalidOverrides), "Invalid override density accepted");
+    auto legacyPreset = saved; legacyPreset["version"] = 1; legacyPreset.remove("overrides");
+    check(controller.setPreset(legacyPreset) && controller.overrides.isEmpty(), "Legacy preset migration failed");
+    check(controller.setPreset(saved), "Failed to restore global settings");
 
     QFile fixture(PALETTE_FIXTURE);
     check(fixture.open(QIODevice::ReadOnly), "Missing palette fixtures");

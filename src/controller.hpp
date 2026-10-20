@@ -20,6 +20,7 @@ public:
     QJsonObject preset() const;
     bool setPreset(const QJsonObject &value, QString *error = nullptr);
     QMap<QString, bool> panels;
+    QJsonObject overrides;
     QSet<QString> found;
     int lastFound = 0;
     static QStringList dockIds();
@@ -28,7 +29,7 @@ public:
     void resetPreferences();
     void apply();
     void remove();
-    QJsonObject palette() const;
+    QJsonObject palette(const QString &modeOverride = {}) const;
     static QString script(bool enabled, const QJsonObject &palette, bool motion = true, const QString &density = "standard");
 private:
     QPointer<QWidget> main;

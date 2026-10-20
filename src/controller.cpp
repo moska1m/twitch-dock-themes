@@ -31,6 +31,7 @@ QStringList ThemeController::dockIds()
 
 void ThemeController::resetPreferences()
 {
+    overrides = {};
     enabled = true;
     motion = true;
     mode = "follow";
@@ -53,6 +54,15 @@ void ThemeController::loadSettings(QSettings &s)
         const auto value = s.value("colors/" + entry.first, *entry.second).toString();
         if (hex.match(value).hasMatch()) *entry.second = value;
     }
+    const auto stored = QJsonDocument::fromJson(s.value("overrides").toByteArray()).object();
+    // Invalid stored overrides fall back to the global settings.
+    for (const auto &id : dockIds()) {
+        const auto item = stored[id].toObject();
+        QJsonObject valid;
+        if (QStringList{"follow", "obsidian", "graphite", "custom"}.contains(item["mode"].toString())) valid["mode"] = item["mode"];
+        if (QStringList{"compact", "standard", "comfortable"}.contains(item["density"].toString())) valid["density"] = item["density"];
+        if (!valid.isEmpty()) overrides[id] = valid;
+    }
     const bool legacy = !s.contains("schema") && s.contains("secondary");
     for (const auto &id : dockIds()) {
         const bool defaultValue = legacy ? (id == "twitchChat" || s.value("secondary").toBool()) : true;
@@ -62,7 +72,8 @@ void ThemeController::loadSettings(QSettings &s)
 
 void ThemeController::saveSettings(QSettings &s) const
 {
-    s.setValue("schema", 3);
+    s.setValue("schema", 4);
+    s.setValue("overrides", QJsonDocument(overrides).toJson(QJsonDocument::Compact));
     s.setValue("density", density);
     s.setValue("colors/background", background);
     s.setValue("colors/accent", accent);
@@ -97,8 +108,9 @@ static QColor readableLink(const QColor &original, const QColor &base, const QCo
     return target;
 }
 
-QJsonObject ThemeController::palette() const
+QJsonObject ThemeController::palette(const QString &modeOverride) const
 {
+    const auto mode = modeOverride.isEmpty() ? this->mode : modeOverride;
     if (mode == "obsidian" || mode == "graphite") {
         const bool graphite = mode == "graphite";
         return {
@@ -155,13 +167,15 @@ int ThemeController::dispatch(bool active)
 {
     found.clear();
     if (!main) return 0;
-    const std::string applyScript = script(active, palette(), motion, density).toUtf8().toStdString();
     const std::string removeScript = script(false, {}).toUtf8().toStdString();
     int count = 0;
     // Run on Qt's UI thread. Only named built-in Twitch docks are considered.
     for (auto *dock : main->findChildren<QDockWidget *>()) {
         if (!panels.contains(dock->objectName())) continue;
         const bool selected = panels.value(dock->objectName(), false);
+        const auto settings = overrides[dock->objectName()].toObject();
+        const auto panelDensity = settings["density"].toString(density);
+        const auto applyScript = script(active, palette(settings["mode"].toString()), motion, panelDensity).toUtf8().toStdString();
         for (auto *widget : dock->findChildren<QWidget *>()) {
             if (!widget->inherits("QCefWidget")) continue;
             // ABI is pinned to OBS 32.2.2 / browser panel API 3.
@@ -181,15 +195,15 @@ QJsonObject ThemeController::preset() const
 {
     QJsonObject selected;
     for (const auto &id : dockIds()) selected[id] = panels.value(id, false);
-    return {{"format", "twitch-dock-themes"}, {"version", 1}, {"enabled", enabled},
+    return {{"format", "twitch-dock-themes"}, {"version", 2}, {"overrides", overrides}, {"enabled", enabled},
         {"mode", mode}, {"motion", motion}, {"density", density}, {"panels", selected},
         {"colors", QJsonObject{{"background", background}, {"accent", accent}, {"border", border}}}};
 }
 
 bool ThemeController::setPreset(const QJsonObject &v, QString *error)
 {
-    auto fail = [&]() { if (error) *error = "Preset inválido ou de uma versão incompatível."; return false; };
-    if (v["format"] != "twitch-dock-themes" || v["version"] != 1 ||
+    auto fail = [&]() { if (error) *error = "Preset invÃ¡lido ou de uma versÃ£o incompatÃ­vel."; return false; };
+    if (v["format"] != "twitch-dock-themes" || (v["version"] != 1 && v["version"] != 2) ||
         !v["enabled"].isBool() || !v["motion"].isBool()) return fail();
     const auto m = v["mode"].toString(), d = v["density"].toString();
     if (!QStringList{"follow", "obsidian", "graphite", "custom"}.contains(m) ||
@@ -199,6 +213,23 @@ bool ThemeController::setPreset(const QJsonObject &v, QString *error)
     for (const auto &key : {"background", "accent", "border"})
         if (!hex.match(colors[key].toString()).hasMatch()) return fail();
     for (const auto &id : dockIds()) if (!selected[id].isBool()) return fail();
+    QJsonObject incoming;
+    if (v["version"] == 2) {
+        if (!v["overrides"].isObject()) return fail();
+        incoming = v["overrides"].toObject();
+        for (auto it = incoming.begin(); it != incoming.end(); ++it) {
+            if (!dockIds().contains(it.key()) || !it.value().isObject()) return fail();
+            const auto item = it.value().toObject();
+            for (auto field = item.begin(); field != item.end(); ++field) {
+                if (field.key() == "mode") {
+                    if (!QStringList{"follow", "obsidian", "graphite", "custom"}.contains(field.value().toString())) return fail();
+                } else if (field.key() == "density") {
+                    if (!QStringList{"compact", "standard", "comfortable"}.contains(field.value().toString())) return fail();
+                } else return fail();
+            }
+        }
+    }
+    overrides = incoming;
     enabled = v["enabled"].toBool(); motion = v["motion"].toBool(); mode = m; density = d;
     background = colors["background"].toString(); accent = colors["accent"].toString(); border = colors["border"].toString();
     for (const auto &id : dockIds()) panels[id] = selected[id].toBool();
