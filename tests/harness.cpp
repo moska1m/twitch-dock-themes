@@ -1,5 +1,7 @@
 #include "controller.hpp"
 #include "preset-library.hpp"
+#include "settings-dialog.hpp"
+#include <QKeyEvent>
 #include "browser-panel.hpp"
 #include <QApplication>
 #include <QDockWidget>
@@ -28,6 +30,21 @@ static void check(bool value, const char *message) { if (!value) throw std::runt
 int main(int argc, char **argv) try
 {
     QApplication app(argc, argv);
+    SettingsDialog dialog;
+    bool discardAllowed = false; int closeChecks = 0;
+    dialog.canDiscard = [&]() { ++closeChecks; return discardAllowed; };
+    dialog.show();
+    dialog.reject();
+    check(dialog.isVisible() && closeChecks == 1, "Reject bypassed unsaved guard");
+    dialog.close();
+    check(dialog.isVisible() && closeChecks == 2, "Window close bypassed guard");
+    QKeyEvent escape(QEvent::KeyPress, Qt::Key_Escape, Qt::NoModifier);
+    QApplication::sendEvent(&dialog, &escape);
+    check(dialog.isVisible() && closeChecks == 3, "Escape bypassed guard");
+    discardAllowed = true;
+    dialog.close();
+    check(!dialog.isVisible(), "Confirmed discard did not close dialog");
+    dialog.canDiscard = {};
     QWidget main;
     auto *chat = new QDockWidget(&main); chat->setObjectName("twitchChat");
     auto *chatBrowser = new FakeBrowser(chat); chat->setWidget(chatBrowser);

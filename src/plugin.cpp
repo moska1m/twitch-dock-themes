@@ -3,6 +3,7 @@
 #include "browser-panel.hpp"
 #include "controller.hpp"
 #include "preset-library.hpp"
+#include "settings-dialog.hpp"
 #include <QApplication>
 #include <QAction>
 #include <QDialog>
@@ -56,7 +57,7 @@ static void openSettings()
     QJsonObject committed = controller->preset();
     ThemeController draft(nullptr);
     draft.setPreset(committed);
-    QDialog d(static_cast<QWidget *>(obs_frontend_get_main_window()));
+    SettingsDialog d(static_cast<QWidget *>(obs_frontend_get_main_window()));
     d.setWindowTitle("Twitch Dock Themes · experimental");
     d.setMinimumWidth(480);
     bool populating = false;
@@ -125,7 +126,7 @@ static void openSettings()
     });
     auto *motion = new QCheckBox("Transição suave ao passar o mouse");
     motion->setToolTip("Respeita a preferência de movimento reduzido do sistema.");
-    auto *status = new QLabel("As alterações aparecem automaticamente. Aplicar e salvar confirma; Fechar restaura o que estava salvo.");
+    auto *status = new QLabel("As alterações aparecem automaticamente. Salvar confirma; Fechar restaura o que estava salvo.");
     status->setWordWrap(true);
     auto *diagnostic = new QPushButton("Diagnóstico dos painéis");
     auto *importButton = new QPushButton("Importar preset");
@@ -143,7 +144,7 @@ static void openSettings()
     auto *presetRow = new QHBoxLayout;
     presetRow->addWidget(importButton); presetRow->addWidget(exportButton);
     auto *buttons = new QDialogButtonBox(QDialogButtonBox::Apply | QDialogButtonBox::Close);
-    auto *apply = buttons->button(QDialogButtonBox::Apply); apply->setText("Aplicar e salvar");
+    auto *apply = buttons->button(QDialogButtonBox::Apply); apply->setText("Salvar");
     buttons->button(QDialogButtonBox::Close)->setText("Fechar");
     auto *reset = new QPushButton("Desativar e restaurar Twitch");
     layout->addWidget(enabled); layout->addWidget(new QLabel("Aparência")); layout->addWidget(mode);
@@ -194,7 +195,7 @@ static void openSettings()
         if (populating || !controller) return;
         collect();
         controller->setPreset(draft.preset()); controller->apply();
-        status->setText("Alterações em exibição. Aplicar e salvar confirma; Fechar restaura a última configuração salva.");
+        status->setText("Alterações em exibição. Salvar confirma; Fechar restaura a última configuração salva.");
     };
     QObject::connect(&liveTimer, &QTimer::timeout, &d, applyLive);
     auto scheduleLive = [&]() { if (!populating) liveTimer.start(); };
@@ -231,7 +232,7 @@ static void openSettings()
             QMessageBox::Yes | QMessageBox::No, QMessageBox::No) != QMessageBox::Yes) return;
         collect();
         if (!library.put(name, draft.preset(), exists, error)) { QMessageBox::warning(&d, "Salvar preset", error); return; }
-        refreshLibrary(name); status->setText("Preset guardado na biblioteca. Aplicar e salvar confirma a configuração em exibição.");
+        refreshLibrary(name); status->setText("Preset guardado na biblioteca. Salvar confirma a configuração em exibição.");
     });
     QObject::connect(deletePreset, &QPushButton::clicked, &d, [&]() {
         const auto name = savedPresets->currentData().toString();
@@ -323,7 +324,21 @@ static void openSettings()
         refreshReport(); report.exec();
     });
     QObject::connect(buttons, &QDialogButtonBox::rejected, &d, &QDialog::reject);
+    d.canDiscard = [&]() {
+        if (!controller) return true;
+        collect();
+        if (draft.preset() == committed) return true;
+        QMessageBox notice(QMessageBox::Question, "Alterações não salvas",
+            "Você tem alterações não salvas. Sair sem salvar restaura a última configuração salva.",
+            QMessageBox::NoButton, &d);
+        auto *discard = notice.addButton("Sair sem salvar", QMessageBox::DestructiveRole);
+        auto *keepEditing = notice.addButton("Continuar editando", QMessageBox::RejectRole);
+        notice.setDefaultButton(keepEditing); notice.setEscapeButton(keepEditing);
+        notice.exec();
+        return notice.clickedButton() == discard;
+    };
     d.exec();
+    d.canDiscard = {}; // Callbacks capture locals destroyed before the dialog.
     liveTimer.stop();
     if (controller) { controller->setPreset(committed); controller->apply(); }
 }
@@ -365,7 +380,7 @@ void obs_module_post_load(void)
     menuAction = static_cast<QAction *>(obs_frontend_add_tools_menu_qaction("Twitch Dock Themes"));
     if (menuAction) QObject::connect(menuAction, &QAction::triggered, controller, []() { openSettings(); });
     obs_frontend_add_event_callback(frontendEvent, nullptr);
-    blog(LOG_INFO, "[twitch-dock-themes] 0.4.0 experimental live-preview loaded; mode=%s.", controller->mode.toUtf8().constData());
+    blog(LOG_INFO, "[twitch-dock-themes] 0.4.0 experimental save-guard loaded; mode=%s.", controller->mode.toUtf8().constData());
 }
 
 void obs_module_unload(void)
