@@ -1,4 +1,5 @@
 #include "controller.hpp"
+#include "preset-library.hpp"
 #include "browser-panel.hpp"
 #include <QApplication>
 #include <QDockWidget>
@@ -184,6 +185,32 @@ int main(int argc, char **argv) try
     auto legacyPreset = saved; legacyPreset["version"] = 1; legacyPreset.remove("overrides");
     check(controller.setPreset(legacyPreset) && controller.overrides.isEmpty(), "Legacy preset migration failed");
     check(controller.setPreset(saved), "Failed to restore global settings");
+
+    const auto libraryPath = temp.filePath("presets.json");
+    PresetLibrary library(libraryPath);
+    QJsonObject libraryItems; QString libraryError;
+    check(library.read(libraryItems, libraryError) && libraryItems.isEmpty(), "New library not empty");
+    check(library.put("Live / compacto", separate, false, libraryError), "Could not save named preset");
+    PresetLibrary reopenLibrary(libraryPath);
+    check(reopenLibrary.read(libraryItems, libraryError), "Could not reopen library");
+    check(libraryItems["Live / compacto"].toObject() == separate, "Library lost panel overrides");
+    check(!library.put("Live / compacto", saved, false, libraryError), "Duplicate silently overwritten");
+    check(library.put("Live / compacto", saved, true, libraryError), "Explicit replacement failed");
+    check(library.read(libraryItems, libraryError) && libraryItems["Live / compacto"].toObject() == saved, "Replacement not persisted");
+    check(!library.put("", saved, false, libraryError), "Empty name accepted");
+    check(!library.put(QString(65, 'x'), saved, false, libraryError), "Long name accepted");
+    check(!library.put("bad\nname", saved, false, libraryError), "Control character accepted");
+    check(!library.put("invalid", QJsonObject{}, false, libraryError), "Invalid preset accepted");
+    check(library.erase("Live / compacto", libraryError), "Deletion failed");
+    check(library.read(libraryItems, libraryError) && libraryItems.isEmpty(), "Deleted preset remained");
+    check(!library.erase("missing", libraryError), "Missing deletion accepted");
+    QFile broken(libraryPath);
+    check(broken.open(QIODevice::WriteOnly), "Could not create corrupt fixture");
+    broken.write("{corrupt"); broken.close();
+    check(!library.put("valid", saved, false, libraryError), "Corrupt library overwritten");
+    check(broken.open(QIODevice::ReadOnly) && broken.readAll() == "{corrupt", "Corrupt library was not preserved");
+    broken.close();
+    check(controller.preset() == saved, "Library actions altered active preferences");
 
     QFile fixture(PALETTE_FIXTURE);
     check(fixture.open(QIODevice::ReadOnly), "Missing palette fixtures");

@@ -2,6 +2,7 @@
 #include <obs-frontend-api.h>
 #include "browser-panel.hpp"
 #include "controller.hpp"
+#include "preset-library.hpp"
 #include <QApplication>
 #include <QAction>
 #include <QDialog>
@@ -26,6 +27,10 @@
 #include <QJsonParseError>
 #include <QPlainTextEdit>
 #include <QClipboard>
+#include <QInputDialog>
+#include <QLineEdit>
+#include <QScrollArea>
+#include <QScreen>
 
 OBS_DECLARE_MODULE()
 MODULE_EXPORT const char *obs_module_name(void) { return "Twitch Dock Themes"; }
@@ -51,9 +56,15 @@ static void openSettings()
     ThemeController draft(nullptr);
     draft.setPreset(committed);
     QDialog d(static_cast<QWidget *>(obs_frontend_get_main_window()));
-    d.setWindowTitle("Twitch Dock Themes · 0.4.0");
+    d.setWindowTitle("Twitch Dock Themes · experimental");
     d.setMinimumWidth(480);
-    auto *layout = new QVBoxLayout(&d);
+    auto *outer = new QVBoxLayout(&d);
+    auto *scroll = new QScrollArea; scroll->setWidgetResizable(true);
+    scroll->setFrameShape(QFrame::NoFrame);
+    auto *content = new QWidget;
+    auto *layout = new QVBoxLayout(content);
+    scroll->setWidget(content); outer->addWidget(scroll);
+    d.resize(860, qMin(780, d.screen()->availableGeometry().height() - 80));
     auto *enabled = new QCheckBox("Aplicar aparência aos painéis da Twitch");
     auto *mode = new QComboBox;
     mode->addItem("Seguir a paleta do OBS", "follow");
@@ -117,6 +128,17 @@ static void openSettings()
     auto *preview = new QPushButton("Prévia nos painéis");
     auto *importButton = new QPushButton("Importar preset");
     auto *exportButton = new QPushButton("Exportar preset");
+    PresetLibrary library(QFileInfo(settingsPath).dir().filePath("presets.json"));
+    auto *libraryBox = new QGroupBox("Meus presets");
+    auto *libraryLayout = new QGridLayout(libraryBox);
+    auto *savedPresets = new QComboBox;
+    savedPresets->setAccessibleName("Presets salvos");
+    auto *loadPreset = new QPushButton("Carregar");
+    auto *savePreset = new QPushButton("Salvar como");
+    auto *deletePreset = new QPushButton("Excluir");
+    libraryLayout->addWidget(savedPresets, 0, 0, 1, 3);
+    libraryLayout->addWidget(loadPreset, 1, 0); libraryLayout->addWidget(savePreset, 1, 1);
+    libraryLayout->addWidget(deletePreset, 1, 2);
     auto *presetRow = new QHBoxLayout;
     presetRow->addWidget(importButton); presetRow->addWidget(exportButton);
     auto *buttons = new QDialogButtonBox(QDialogButtonBox::Apply | QDialogButtonBox::Close);
@@ -125,9 +147,9 @@ static void openSettings()
     auto *reset = new QPushButton("Desativar e restaurar Twitch");
     layout->addWidget(enabled); layout->addWidget(new QLabel("Aparência")); layout->addWidget(mode);
     layout->addWidget(colors); layout->addWidget(new QLabel("Densidade (chat e atividades)")); layout->addWidget(density);
-    layout->addWidget(panelBox); layout->addWidget(motion); layout->addLayout(presetRow);
+    layout->addWidget(panelBox); layout->addWidget(motion); layout->addWidget(libraryBox); layout->addLayout(presetRow);
     layout->addWidget(diagnostic);
-    layout->addWidget(status); layout->addWidget(preview); layout->addWidget(reset); layout->addWidget(buttons);
+    layout->addWidget(status); layout->addWidget(preview); layout->addWidget(reset); outer->addWidget(buttons);
     auto updateColors = [&]() {
         bool needed = mode->currentData() == "custom";
         for (auto *pm : panelModes) needed = needed || pm->currentData() == "custom";
@@ -165,6 +187,50 @@ static void openSettings()
             if (!item.isEmpty()) draft.overrides[id] = item;
         }
     };
+    auto refreshLibrary = [&](const QString &selection) {
+        QJsonObject items; QString error;
+        const bool ok = library.read(items, error);
+        savedPresets->clear();
+        if (ok) {
+            auto names = items.keys(); names.sort(Qt::CaseInsensitive);
+            for (const auto &name : names) savedPresets->addItem(name, name);
+        } else status->setText(error);
+        if (!selection.isEmpty()) savedPresets->setCurrentIndex(savedPresets->findData(selection));
+        loadPreset->setEnabled(ok && savedPresets->currentIndex() >= 0);
+        deletePreset->setEnabled(ok && savedPresets->currentIndex() >= 0);
+        savePreset->setEnabled(ok);
+        savedPresets->setPlaceholderText(ok ? "Nenhum preset salvo" : "Biblioteca indisponível");
+    };
+    refreshLibrary({});
+    QObject::connect(loadPreset, &QPushButton::clicked, &d, [&]() {
+        QJsonObject items; QString error;
+        if (!library.read(items, error) || !draft.setPreset(items.value(savedPresets->currentData().toString()).toObject(), &error)) {
+            QMessageBox::warning(&d, "Carregar preset", error); return;
+        }
+        populate(); status->setText("Preset carregado nos controles. Use Prévia ou Aplicar e salvar.");
+    });
+    QObject::connect(savePreset, &QPushButton::clicked, &d, [&]() {
+        bool accepted = false;
+        const auto name = QInputDialog::getText(&d, "Salvar preset", "Nome (até 64 caracteres)", QLineEdit::Normal,
+            {}, &accepted).trimmed();
+        if (!accepted) return;
+        QJsonObject items; QString error;
+        if (!library.read(items, error)) { QMessageBox::warning(&d, "Salvar preset", error); return; }
+        const bool exists = items.contains(name);
+        if (exists && QMessageBox::question(&d, "Substituir preset", "Substituir o preset “" + name + "”?",
+            QMessageBox::Yes | QMessageBox::No, QMessageBox::No) != QMessageBox::Yes) return;
+        collect();
+        if (!library.put(name, draft.preset(), exists, error)) { QMessageBox::warning(&d, "Salvar preset", error); return; }
+        refreshLibrary(name); status->setText("Preset salvo na biblioteca. Use Prévia ou Aplicar para alterar os painéis.");
+    });
+    QObject::connect(deletePreset, &QPushButton::clicked, &d, [&]() {
+        const auto name = savedPresets->currentData().toString();
+        if (QMessageBox::question(&d, "Excluir preset", "Excluir “" + name + "” da biblioteca?",
+            QMessageBox::Yes | QMessageBox::No, QMessageBox::No) != QMessageBox::Yes) return;
+        QString error;
+        if (!library.erase(name, error)) { QMessageBox::warning(&d, "Excluir preset", error); return; }
+        refreshLibrary({}); status->setText("Preset excluído da biblioteca. A configuração dos painéis foi mantida.");
+    });
     QObject::connect(mode, &QComboBox::currentIndexChanged, &d, updateColors);
     for (auto *pm : panelModes) QObject::connect(pm, &QComboBox::currentIndexChanged, &d, updateColors);
     populate();
@@ -286,7 +352,7 @@ void obs_module_post_load(void)
     menuAction = static_cast<QAction *>(obs_frontend_add_tools_menu_qaction("Twitch Dock Themes"));
     if (menuAction) QObject::connect(menuAction, &QAction::triggered, controller, []() { openSettings(); });
     obs_frontend_add_event_callback(frontendEvent, nullptr);
-    blog(LOG_INFO, "[twitch-dock-themes] 0.4.0 loaded; mode=%s.", controller->mode.toUtf8().constData());
+    blog(LOG_INFO, "[twitch-dock-themes] 0.4.0 experimental preset-library loaded; mode=%s.", controller->mode.toUtf8().constData());
 }
 
 void obs_module_unload(void)
