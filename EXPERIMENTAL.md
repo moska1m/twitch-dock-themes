@@ -14,4 +14,12 @@ Presets antigos da 0.3.0 continuam sendo importados. Novos presets incluem as es
 
 Testes automatizados verificam isolamento entre os painéis, herança, persistência, presets antigos e rejeição de combinações inválidas. Falta validar visualmente essas novas combinações no OBS.
 
-Para voltar à DLL estável, feche o OBS e execute Restore-Previous.ps1. O GitHub mantém a versão 0.3.0 estável.
+Para voltar à DLL anterior, feche o OBS e execute Restore-Previous.ps1. O GitHub mantém a versão 0.3.0 estável.
+
+## Diagnóstico dos painéis
+
+O botão Diagnóstico dos painéis abre um relatório da configuração ativa, incluindo a prévia, com cores e densidade efetivas, presença dos navegadores e horário UTC da última verificação. Atualizar verifica novamente os painéis e reenvia a configuração ativa. Copiar relatório envia o texto para a área de transferência somente ao clicar.
+
+O relatório não lê mensagens, URLs, contas ou credenciais. Indica pedidos de aplicação/remoção enviados ao navegador, sem afirmar que o CSS foi aceito ou que o resultado visual está correto. A interface de browser utilizada não oferece retorno de execução desse JavaScript.
+
+Testes adicionais cobrem relatório de envio, desativação, painel removido, herança de aparência/densidade e ausência de confirmação visual indevida.

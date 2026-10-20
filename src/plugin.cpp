@@ -24,6 +24,8 @@
 #include <QFile>
 #include <QJsonDocument>
 #include <QJsonParseError>
+#include <QPlainTextEdit>
+#include <QClipboard>
 
 OBS_DECLARE_MODULE()
 MODULE_EXPORT const char *obs_module_name(void) { return "Twitch Dock Themes"; }
@@ -110,6 +112,7 @@ static void openSettings()
     motion->setToolTip("Respeita a preferência de movimento reduzido do sistema.");
     auto *status = new QLabel("Use Prévia para experimentar. Aplicar salva; Fechar desfaz a prévia.");
     status->setWordWrap(true);
+    auto *diagnostic = new QPushButton("Diagnóstico dos painéis");
     auto *preview = new QPushButton("Prévia nos painéis");
     auto *importButton = new QPushButton("Importar preset");
     auto *exportButton = new QPushButton("Exportar preset");
@@ -122,6 +125,7 @@ static void openSettings()
     layout->addWidget(enabled); layout->addWidget(new QLabel("Aparência")); layout->addWidget(mode);
     layout->addWidget(colors); layout->addWidget(new QLabel("Densidade")); layout->addWidget(density);
     layout->addWidget(panelBox); layout->addWidget(motion); layout->addLayout(presetRow);
+    layout->addWidget(diagnostic);
     layout->addWidget(status); layout->addWidget(preview); layout->addWidget(reset); layout->addWidget(buttons);
     auto updateColors = [&]() {
         bool needed = mode->currentData() == "custom";
@@ -210,6 +214,35 @@ static void openSettings()
             QMessageBox::warning(&d, "Exportar preset", "Não foi possível salvar o arquivo.");
         else status->setText("Preset exportado. A exportação não altera os painéis.");
     });
+    QObject::connect(diagnostic, &QPushButton::clicked, &d, [&]() {
+        if (!controller) return;
+        QDialog report(&d);
+        report.setWindowTitle("Diagnóstico dos painéis"); report.resize(700, 520);
+        auto *box = new QVBoxLayout(&report);
+        auto *explanation = new QLabel("O relatório mostra a configuração ativa, inclusive uma prévia. Encontrar o navegador e enviar CSS não confirma que a página aplicou o visual. O horário está em UTC.");
+        explanation->setWordWrap(true);
+        auto *text = new QPlainTextEdit; text->setReadOnly(true);
+        auto *actions = new QDialogButtonBox(QDialogButtonBox::Close);
+        auto *refresh = actions->addButton("Atualizar", QDialogButtonBox::ActionRole);
+        auto *copy = actions->addButton("Copiar relatório", QDialogButtonBox::ActionRole);
+        auto refreshReport = [&]() {
+            if (!controller) { report.reject(); return; }
+            controller->apply();
+            auto data = controller->diagnostics();
+            data["pluginBuild"] = "0.3.0 experimental diagnostics";
+            data["qtRuntime"] = QString::fromLatin1(qVersion());
+            data["obsApiVersion"] = static_cast<int>(obs_get_version());
+            text->setPlainText(QString::fromUtf8(QJsonDocument(data).toJson()));
+            copy->setText("Copiar relatório");
+        };
+        box->addWidget(explanation); box->addWidget(text); box->addWidget(actions);
+        QObject::connect(refresh, &QPushButton::clicked, &report, refreshReport);
+        QObject::connect(copy, &QPushButton::clicked, &report, [&]() {
+            QApplication::clipboard()->setText(text->toPlainText()); copy->setText("Copiado");
+        });
+        QObject::connect(actions, &QDialogButtonBox::rejected, &report, &QDialog::reject);
+        refreshReport(); report.exec();
+    });
     QObject::connect(buttons, &QDialogButtonBox::rejected, &d, &QDialog::reject);
     d.exec();
     if (controller) { controller->setPreset(committed); controller->apply(); }
@@ -252,7 +285,7 @@ void obs_module_post_load(void)
     menuAction = static_cast<QAction *>(obs_frontend_add_tools_menu_qaction("Twitch Dock Themes"));
     if (menuAction) QObject::connect(menuAction, &QAction::triggered, controller, []() { openSettings(); });
     obs_frontend_add_event_callback(frontendEvent, nullptr);
-    blog(LOG_INFO, "[twitch-dock-themes] 0.3.0 experimental per-panel loaded; mode=%s.", controller->mode.toUtf8().constData());
+    blog(LOG_INFO, "[twitch-dock-themes] 0.3.0 experimental diagnostics loaded; mode=%s.", controller->mode.toUtf8().constData());
 }
 
 void obs_module_unload(void)

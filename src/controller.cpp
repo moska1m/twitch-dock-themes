@@ -4,6 +4,7 @@
 #include <QApplication>
 #include <QPalette>
 #include <QJsonDocument>
+#include <QJsonArray>
 #include <QSet>
 #include <QRegularExpression>
 #include <QDockWidget>
@@ -166,6 +167,8 @@ QString ThemeController::script(bool active, const QJsonObject &colors, bool mot
 int ThemeController::dispatch(bool active)
 {
     found.clear();
+    requests.clear();
+    lastScan = QDateTime::currentDateTimeUtc();
     if (!main) return 0;
     const std::string removeScript = script(false, {}).toUtf8().toStdString();
     int count = 0;
@@ -182,6 +185,7 @@ int ThemeController::dispatch(bool active)
             auto *browser = static_cast<QCefWidget *>(widget);
             browser->executeJavaScript(active && selected ? applyScript : removeScript);
             found.insert(dock->objectName());
+            requests[dock->objectName()] = active && selected ? "style-requested" : "removal-requested";
             if (selected) ++count;
         }
     }
@@ -202,7 +206,7 @@ QJsonObject ThemeController::preset() const
 
 bool ThemeController::setPreset(const QJsonObject &v, QString *error)
 {
-    auto fail = [&]() { if (error) *error = "Preset invÃ¡lido ou de uma versÃ£o incompatÃ­vel."; return false; };
+    auto fail = [&]() { if (error) *error = "Preset inválido ou de uma versão incompatível."; return false; };
     if (v["format"] != "twitch-dock-themes" || (v["version"] != 1 && v["version"] != 2) ||
         !v["enabled"].isBool() || !v["motion"].isBool()) return fail();
     const auto m = v["mode"].toString(), d = v["density"].toString();
@@ -234,4 +238,24 @@ bool ThemeController::setPreset(const QJsonObject &v, QString *error)
     background = colors["background"].toString(); accent = colors["accent"].toString(); border = colors["border"].toString();
     for (const auto &id : dockIds()) panels[id] = selected[id].toBool();
     return true;
+}
+
+QJsonObject ThemeController::diagnostics() const
+{
+    QJsonArray items;
+    for (const auto &id : dockIds()) {
+        const auto item = overrides[id].toObject();
+        const QString effectiveMode = item["mode"].toString(mode);
+        items.append(QJsonObject{{"panel", id}, {"browserFound", found.contains(id)},
+            {"selected", panels.value(id, false)}, {"mode", effectiveMode},
+            {"density", item["density"].toString(density)},
+            {"request", requests.value(id, "none")},
+            {"colors", palette(effectiveMode)}});
+    }
+    return {{"format", "twitch-dock-themes-diagnostics"}, {"version", 1},
+        {"enabled", enabled}, {"motion", motion},
+        {"lastScanUtc", lastScan.isValid() ? lastScan.toString(Qt::ISODateWithMs) : QString()},
+        {"visualApplicationConfirmed", false},
+        {"scope", "Built-in Twitch docks only. Script execution has no result callback; page styling is not confirmed."},
+        {"panels", items}};
 }

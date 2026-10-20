@@ -8,6 +8,7 @@
 #include <QSet>
 #include <QSettings>
 #include <QStringList>
+#include <QDateTime>
 
 class ThemeController : public QObject {
 public:
@@ -17,6 +18,7 @@ public:
     QString mode = "follow";
     QString density = "standard";
     QString background = "#101014", accent = "#54ccf5", border = "#35353b";
+    QJsonObject diagnostics() const;
     QJsonObject preset() const;
     bool setPreset(const QJsonObject &value, QString *error = nullptr);
     QMap<QString, bool> panels;
@@ -34,5 +36,7 @@ public:
 private:
     QPointer<QWidget> main;
     QTimer timer;
+    QDateTime lastScan;
+    QMap<QString, QString> requests;
     int dispatch(bool active);
 };
