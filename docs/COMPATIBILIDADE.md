@@ -1,6 +1,6 @@
-# Compatibilidade em teste
+# Compatibilidade
 
-A compilação da branch `feature/obs-compatibility` usa os cabeçalhos e bibliotecas de importação do OBS 30.0.0 e o SDK Qt 6.5.3 oficial do OBS. A release pública 0.5.0 continua limitada a OBS 32.2.2.
+A versão 0.6.0 usa os cabeçalhos e bibliotecas de importação do OBS 30.0.0 e o SDK Qt 6.5.3 oficial do OBS. A faixa suportada no Windows x64 é OBS 30.0.0 a 32.2.2.
 
 ## Resultados locais (20/10/2026)
 
@@ -10,7 +10,7 @@ A compilação da branch `feature/obs-compatibility` usa os cabeçalhos e biblio
 | 31.0.0 | 6.6.3 | Passou | Passou |
 | 32.2.2 | 6.11.1 | Passou | Passou |
 
-Esses testes usam as DLLs de cada versão em processos separados. Não abrem a conta Twitch, não iniciam transmissão e não confirmam o resultado visual dentro do OBS antigo. Não são uma certificação de todas as versões intermediárias.
+Esses testes usam as DLLs de cada versão em processos separados. Não abrem a conta Twitch, não iniciam transmissão e não confirmam o resultado visual dentro do OBS antigo. O uso visual foi confirmado pelo usuário no OBS 32.2.2. A release não depende de nova conferência manual nas versões antigas; problemas nessas versões podem ser reportados pelo formulário de bugs. Isso não equivale a certificar visualmente todas as versões intermediárias.
 
 ## Interfaces comparadas
 

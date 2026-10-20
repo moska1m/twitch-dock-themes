@@ -1,1 +1,1 @@
-Twitch Dock Themes 0.5.0 | OBS Studio 32.2.2 x64 | Qt 6.11.1 | GPL-2.0-or-later. Consulte README.md no pacote.
+Twitch Dock Themes 0.6.0 | Windows x64 | OBS 30.0.0-32.2.2 | Qt 6.5.3 baseline | GPL-2.0-or-later. Consulte docs/COMPATIBILIDADE.md.

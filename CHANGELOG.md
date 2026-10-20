@@ -1,5 +1,13 @@
 # Histórico
 
+## 0.6.0
+
+- Compatibilidade de OBS 30.0.0 a 32.2.2 no Windows x64, compilando com OBS 30.0.0 e Qt 6.5.3.
+- Matriz de carregamento, controlador e interface com bibliotecas oficiais dos OBS 30.0.0, 31.0.0 e 32.2.2.
+- Interface compacta: presets no topo, aparência geral agrupada, cores condicionais e opções avançadas recolhidas.
+- Teste automatizado da janela com edição automática, salvar, cancelar/confirmar descarte e reabrir preferências.
+- Guia ilustrado, matriz de compatibilidade e formulário de bugs no GitHub.
+
 ## 0.5.0
 
 - Biblioteca local de presets por nome, com salvar, substituir e excluir.

@@ -1,8 +1,8 @@
-# Twitch Dock Themes — 0.5.0
+# Twitch Dock Themes — 0.6.0
 
 Aparência integrada para os quatro painéis da Twitch no OBS Studio, com cores do OBS ou dos estilos Obsidian e Obsidian Graphite.
 
-**Compilação de compatibilidade em teste: Windows x64 · OBS 30.0.0 a 32.2.2 · Qt 6.5.3 ou superior da série 6 · browser panel API 3.** Compilada com OBS 30.0.0 / Qt 6.5.3. DLL e testes de interface verificados com bibliotecas dos OBS 30.0.0, 31.0.0 e 32.2.2. A Twitch autenticada nas versões antigas ainda precisa de validação visual. [Matriz e limites](docs/COMPATIBILIDADE.md).
+**Compatibilidade: Windows x64 · OBS 30.0.0 a 32.2.2 · Qt 6.5.3 ou superior da série 6 · browser panel API 3.** Compilada com OBS 30.0.0 / Qt 6.5.3. DLL e testes de interface verificados com bibliotecas dos OBS 30.0.0, 31.0.0 e 32.2.2. Uso visual confirmado no OBS 32.2.2. Nas versões antigas, a cobertura é de testes automatizados e comparação de interfaces; problemas podem ser relatados pelo GitHub. [Matriz e limites](docs/COMPATIBILIDADE.md).
 
 ## Instalar e usar
 
@@ -83,7 +83,7 @@ Para desinstalar, feche o OBS e remova somente a pasta `twitch-dock-themes` no d
 ## Validação e limitações
 
 - A versão 0.1 foi testada manualmente pelo usuário no OBS, inclusive com os painéis secundários.
-- A versão 0.5 compilou em Release x64 e carregou em processo de teste com as dependências do OBS instalado.
+- A versão 0.6 compilou em Release x64 e carregou em processo de teste com as dependências do OBS instalado.
 - O teste Qt cobre os quatro painéis, seleção independente, exclusão de outros docks, ativação/restauração, recriação de painéis, paletas, contraste, persistência e migração das preferências. Inclui dez paletas de referência.
 - O teste JavaScript cobre domínio/caminho, aplicação idempotente, remoção, navegação, validação de cores e opção de movimento.
 - As novidades da 0.3 e a correção do campo do chat foram aprovadas em teste manual pelo usuário no OBS. Os testes automatizados usam navegadores simulados; não substituem a conferência visual em outras instalações.
@@ -93,6 +93,10 @@ Para desinstalar, feche o OBS e remova somente a pasta `twitch-dock-themes` no d
 - A biblioteca de presets, as alterações automáticas e o aviso ao fechar foram aprovados pelo usuário no OBS. Testes Qt também verificam persistência, substituição, exclusão, arquivos inválidos e bloqueio/aceitação do fechamento.
 
 A Twitch pode mudar suas variáveis e seletores. Nem todos os componentes do dashboard necessariamente usam as variáveis sobrescritas. Compatibilidade visual completa com FFZ/BTTV, todas as larguras e todos os estilos ainda não está certificada.
+
+## Relatar um problema
+
+Abra um [relato de bug](https://github.com/moska1m/twitch-dock-themes/issues/new?template=bug.yml) com as versões do OBS e do plugin, painel afetado e passos para reproduzir. O relatório de **Opções avançadas → Diagnóstico dos painéis** ajuda a conferir as escolhas ativas.
 
 ## Compilar e testar
 
@@ -123,7 +127,7 @@ O pacote Windows inclui código e DLL. O arquivo de fontes separado omite binár
 
 - [OBS 32.2.2](https://github.com/obsproject/obs-studio/tree/32.2.2)
 - [Interface do obs-browser fixada pelo OBS 32.2.2](https://github.com/obsproject/obs-browser/blob/3f0a2cdf378939ebe3c6f9ab36d4ea100c25aac2/panel/browser-panel.hpp)
-- [Dependências Qt oficiais usadas](https://github.com/obsproject/obs-deps/releases/tag/2026-07-15)
+- [Dependências Qt oficiais usadas](https://github.com/obsproject/obs-deps/releases/tag/2023-11-03)
 
 Licença: GPL-2.0-or-later. Consulte `COPYING` e `THIRD-PARTY.md`. Projeto independente, sem afiliação à Twitch ou OBS Project.
 

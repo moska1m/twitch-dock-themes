@@ -1,0 +1,51 @@
+name: Relatar bug
+description: Problema de aparência, configuração ou compatibilidade
+title: "[Bug]: "
+body:
+  - type: input
+    id: plugin
+    attributes:
+      label: Versão do Twitch Dock Themes
+      placeholder: "0.6.0"
+    validations:
+      required: true
+  - type: input
+    id: obs
+    attributes:
+      label: Versão do OBS Studio
+      placeholder: "32.2.2, Windows x64"
+    validations:
+      required: true
+  - type: dropdown
+    id: panel
+    attributes:
+      label: Onde ocorre?
+      options:
+        - Chat
+        - Atividades
+        - Informações da transmissão
+        - Estatísticas
+        - Janela do plugin ou presets
+        - Instalação ou carregamento
+        - Outro
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Como reproduzir
+      description: Conte os passos, a aparência e a densidade escolhidas.
+    validations:
+      required: true
+  - type: textarea
+    id: result
+    attributes:
+      label: Resultado esperado e observado
+    validations:
+      required: true
+  - type: textarea
+    id: diagnostics
+    attributes:
+      label: Diagnóstico dos painéis (opcional)
+      description: Copie em Opções avançadas → Diagnóstico dos painéis. Revise o conteúdo antes de publicar; não inclua credenciais nem dados privados.
+      render: json
