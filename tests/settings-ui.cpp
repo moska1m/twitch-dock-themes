@@ -34,7 +34,14 @@ int main(int argc, char **argv)
             const auto capture = qEnvironmentVariable("TDT_UI_CAPTURE_PATH");
             if (!reopen && !capture.isEmpty())
                 checkUi(dialog->grab().save(capture), "Could not save UI capture");
+            QComboBox *icons = nullptr, *feedStyle = nullptr;
+            for (auto *combo : dialog->findChildren<QComboBox *>()) {
+                if (combo->findData("rounded") >= 0) icons = combo;
+                if (combo->findData("cards") >= 0) feedStyle = combo;
+            }
+            checkUi(icons && feedStyle, "Visual controls missing");
             if (reopen) {
+                checkUi(icons->currentData() == "rounded" && feedStyle->currentData() == "cards", "Reopened visual choices lost");
                 checkUi(appearance->currentData() == "custom", "Reopened controls lost saved choice");
                 checkUi(!colors->isHidden(), "Saved custom colors hidden");
                 dialog->reject(); return;
@@ -50,6 +57,10 @@ int main(int argc, char **argv)
             for (auto *button : dialog->findChildren<QPushButton *>())
                 if (button->text() == "Salvar") saveButton = button;
             checkUi(saveButton, "Save button missing");
+            icons->setCurrentIndex(icons->findData("rounded"));
+            feedStyle->setCurrentIndex(feedStyle->findData("cards"));
+            QCoreApplication::processEvents();
+            checkUi(controller->visual.icons == "rounded" && controller->visual.feed == "cards", "Visual choices not applied live");
             saveButton->click();
             QSettings saved(settingsPath, QSettings::IniFormat);
             checkUi(saved.value("mode") == "custom", "Save did not persist live choice");

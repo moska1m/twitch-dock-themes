@@ -36,6 +36,7 @@
 #include <QFormLayout>
 #include <QToolButton>
 #include <QVersionNumber>
+#include <QSpinBox>
 
 OBS_DECLARE_MODULE()
 MODULE_EXPORT const char *obs_module_name(void) { return "Twitch Dock Themes"; }
@@ -61,7 +62,7 @@ static void openSettings()
     ThemeController draft(nullptr);
     draft.setPreset(committed);
     SettingsDialog d(static_cast<QWidget *>(obs_frontend_get_main_window()));
-    d.setWindowTitle("Twitch Dock Themes · 0.6.0");
+    d.setWindowTitle("Twitch Dock Themes · experimental");
     d.setMinimumWidth(480);
     bool populating = false;
     QTimer liveTimer(&d); liveTimer.setSingleShot(true); liveTimer.setInterval(0);
@@ -154,6 +155,32 @@ static void openSettings()
     auto *generalForm = new QFormLayout(general);
     generalForm->addRow("Aparência", mode);
     generalForm->addRow("Densidade do chat e atividades", density);
+    auto *visualBox = new QGroupBox("Estilo dos painéis");
+    auto *visualForm = new QFormLayout(visualBox);
+    auto *icons = new QComboBox;
+    icons->addItem("Ícones originais", "native"); icons->addItem("Traço fino", "thin"); icons->addItem("Traço arredondado", "rounded");
+    auto *feedStyle = new QComboBox;
+    feedStyle->addItem("Original", "native"); feedStyle->addItem("Linhas compactas", "compact"); feedStyle->addItem("Cartões", "cards");
+    auto *focus = new QCheckBox("Modo foco no chat");
+    focus->setToolTip("Recolhe o cabeçalho. Passe o mouse ou use o teclado para acessar os controles.");
+    visualForm->addRow("Ícones dos controles do chat", icons);
+    visualForm->addRow("Feed de atividades", feedStyle); visualForm->addRow(focus);
+    auto *alerts = new QCheckBox("Alertas na borda do chat (experimental)");
+    auto *raids = new QCheckBox("Raids"); auto *subs = new QCheckBox("Inscrições"); auto *mentions = new QCheckBox("Menções");
+    auto *alertTypes = new QWidget; auto *typesLayout = new QHBoxLayout(alertTypes);
+    typesLayout->setContentsMargins(0,0,0,0); typesLayout->addWidget(raids); typesLayout->addWidget(subs); typesLayout->addWidget(mentions);
+    auto *duration = new QSpinBox; duration->setRange(1,8); duration->setSuffix(" s");
+    auto *testBorder = new QPushButton("Testar borda");
+    auto *alertsNote = new QLabel("Detecta novos avisos identificáveis no chat. Não lê textos nem conecta a outro serviço. A detecção depende da página da Twitch."); alertsNote->setWordWrap(true);
+    visualForm->addRow(alerts); visualForm->addRow(alertTypes); visualForm->addRow("Duração do alerta", duration);
+    visualForm->addRow(testBorder); visualForm->addRow(alertsNote);
+    auto updateAlerts = [&]() {
+        alertTypes->setEnabled(alerts->isChecked()); duration->setEnabled(alerts->isChecked());
+        testBorder->setEnabled(enabled->isChecked() && alerts->isChecked() && checks["twitchChat"]->isChecked());
+    };
+    QObject::connect(alerts, &QCheckBox::toggled, &d, updateAlerts);
+    QObject::connect(enabled, &QCheckBox::toggled, &d, updateAlerts);
+    QObject::connect(checks["twitchChat"], &QCheckBox::toggled, &d, updateAlerts);
     auto *advancedToggle = new QToolButton;
     advancedToggle->setText("Opções avançadas"); advancedToggle->setCheckable(true);
     advancedToggle->setToolButtonStyle(Qt::ToolButtonTextBesideIcon);
@@ -168,7 +195,7 @@ static void openSettings()
         advanced->setVisible(open); advancedToggle->setArrowType(open ? Qt::DownArrow : Qt::RightArrow);
     });
     layout->addWidget(enabled); layout->addWidget(libraryBox);
-    layout->addWidget(general); layout->addWidget(colors); layout->addWidget(panelBox);
+    layout->addWidget(general); layout->addWidget(colors); layout->addWidget(panelBox); layout->addWidget(visualBox);
     layout->addWidget(advancedToggle); layout->addWidget(advanced); layout->addStretch();
     outer->addWidget(status); outer->addWidget(buttons);
     auto updateColors = [&]() {
@@ -193,6 +220,11 @@ static void openSettings()
             it.value()->setProperty("color", c[it.key()].toString());
             it.value()->setText((it.key() == "background" ? "Fundo " : it.key() == "accent" ? "Destaque " : "Bordas ") + c[it.key()].toString());
         }
+        icons->setCurrentIndex(icons->findData(draft.visual.icons));
+        feedStyle->setCurrentIndex(feedStyle->findData(draft.visual.feed));
+        focus->setChecked(draft.visual.focus); alerts->setChecked(draft.visual.alerts);
+        raids->setChecked(draft.visual.raids); subs->setChecked(draft.visual.subscriptions); mentions->setChecked(draft.visual.mentions);
+        duration->setValue(draft.visual.duration); updateAlerts();
         updateColors();
     };
     auto collect = [&]() {
@@ -201,6 +233,10 @@ static void openSettings()
         draft.background = colorButtons["background"]->property("color").toString();
         draft.accent = colorButtons["accent"]->property("color").toString();
         draft.border = colorButtons["border"]->property("color").toString();
+        draft.visual.icons = icons->currentData().toString(); draft.visual.feed = feedStyle->currentData().toString();
+        draft.visual.focus = focus->isChecked(); draft.visual.alerts = alerts->isChecked();
+        draft.visual.raids = raids->isChecked(); draft.visual.subscriptions = subs->isChecked(); draft.visual.mentions = mentions->isChecked();
+        draft.visual.duration = duration->value();
         draft.overrides = {};
         for (const auto &id : ThemeController::dockIds()) {
             draft.panels[id] = checks[id]->isChecked();
@@ -269,6 +305,12 @@ static void openSettings()
     QObject::connect(mode, &QComboBox::currentIndexChanged, &d, scheduleLive);
     QObject::connect(density, &QComboBox::currentIndexChanged, &d, scheduleLive);
     for (auto *check : checks) QObject::connect(check, &QCheckBox::toggled, &d, scheduleLive);
+    for (auto *check : {focus, alerts, raids, subs, mentions}) QObject::connect(check, &QCheckBox::toggled, &d, scheduleLive);
+    for (auto *combo : {icons, feedStyle}) QObject::connect(combo, &QComboBox::currentIndexChanged, &d, scheduleLive);
+    QObject::connect(duration, &QSpinBox::valueChanged, &d, scheduleLive);
+    QObject::connect(testBorder, &QPushButton::clicked, &d, [&]() {
+        liveTimer.stop(); applyLive(); if (controller) controller->testBorder();
+    });
     for (auto *combo : panelModes) QObject::connect(combo, &QComboBox::currentIndexChanged, &d, scheduleLive);
     for (auto *combo : panelDensities) QObject::connect(combo, &QComboBox::currentIndexChanged, &d, scheduleLive);
     auto update = [&]() {
@@ -408,7 +450,7 @@ void obs_module_post_load(void)
     menuAction = static_cast<QAction *>(obs_frontend_add_tools_menu_qaction("Twitch Dock Themes"));
     if (menuAction) QObject::connect(menuAction, &QAction::triggered, controller, []() { openSettings(); });
     obs_frontend_add_event_callback(frontendEvent, nullptr);
-    blog(LOG_INFO, "[twitch-dock-themes] 0.6.0 loaded; mode=%s.", controller->mode.toUtf8().constData());
+    blog(LOG_INFO, "[twitch-dock-themes] 0.6.0 experimental visual-docks loaded; mode=%s.", controller->mode.toUtf8().constData());
 }
 
 void obs_module_unload(void)

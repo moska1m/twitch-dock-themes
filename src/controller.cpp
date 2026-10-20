@@ -8,6 +8,7 @@
 #include <QSet>
 #include <QRegularExpression>
 #include <QDockWidget>
+#include <QUuid>
 #include <algorithm>
 #include <cmath>
 
@@ -38,6 +39,7 @@ bool ThemeController::supportsDensity(const QString &id)
 void ThemeController::resetPreferences()
 {
     overrides = {};
+    visual = {};
     enabled = true;
     motion = true;
     mode = "follow";
@@ -69,6 +71,7 @@ void ThemeController::loadSettings(QSettings &s)
         if (supportsDensity(id) && QStringList{"compact", "standard", "comfortable"}.contains(item["density"].toString())) valid["density"] = item["density"];
         if (!valid.isEmpty()) overrides[id] = valid;
     }
+    VisualOptions::parse(QJsonDocument::fromJson(s.value("visual").toByteArray()).object(), visual);
     const bool legacy = !s.contains("schema") && s.contains("secondary");
     for (const auto &id : dockIds()) {
         const bool defaultValue = legacy ? (id == "twitchChat" || s.value("secondary").toBool()) : true;
@@ -78,7 +81,8 @@ void ThemeController::loadSettings(QSettings &s)
 
 void ThemeController::saveSettings(QSettings &s) const
 {
-    s.setValue("schema", 4);
+    s.setValue("schema", 5);
+    s.setValue("visual", QJsonDocument(visual.json()).toJson(QJsonDocument::Compact));
     s.setValue("overrides", QJsonDocument(overrides).toJson(QJsonDocument::Compact));
     s.setValue("density", density);
     s.setValue("colors/background", background);
@@ -161,10 +165,10 @@ QJsonObject ThemeController::palette(const QString &modeOverride) const
     };
 }
 
-QString ThemeController::script(bool active, const QJsonObject &colors, bool motion, const QString &density, const QString &panel)
+QString ThemeController::script(bool active, const QJsonObject &colors, bool motion, const QString &density, const QString &panel, const QJsonObject &visual, const QString &testPulse)
 {
     QString result = QString::fromUtf8(bridgeScript);
-    const QJsonObject config{{"enabled", active}, {"palette", colors}, {"motion", motion}, {"density", density}, {"panel", panel}};
+    const QJsonObject config{{"enabled", active}, {"palette", colors}, {"motion", motion}, {"density", density}, {"panel", panel}, {"visual", visual}, {"testPulse", testPulse}};
     result.replace("__CONFIG__", QString::fromUtf8(QJsonDocument(config).toJson(QJsonDocument::Compact)));
     return result;
 }
@@ -183,7 +187,7 @@ int ThemeController::dispatch(bool active)
         const bool selected = panels.value(dock->objectName(), false);
         const auto settings = overrides.value(dock->objectName()).toObject();
         const auto panelDensity = supportsDensity(dock->objectName()) ? settings["density"].toString(density) : QString("standard");
-        const auto applyScript = script(active, palette(settings["mode"].toString()), motion, panelDensity, dock->objectName()).toUtf8().toStdString();
+        const auto applyScript = script(active, palette(settings["mode"].toString()), motion, panelDensity, dock->objectName(), visual.json(), testPulse).toUtf8().toStdString();
         for (auto *widget : dock->findChildren<QWidget *>()) {
             if (!widget->inherits("QCefWidget")) continue;
             // QCefWidget layout audited in OBS 30.0.0 through 32.2.2; browser API 3 checked before use.
@@ -198,13 +202,19 @@ int ThemeController::dispatch(bool active)
 }
 
 void ThemeController::apply() { lastFound = dispatch(enabled); }
+void ThemeController::testBorder()
+{
+    if (!enabled || !visual.alerts || !panels.value("twitchChat", false)) return;
+    testPulse = QUuid::createUuid().toString(QUuid::WithoutBraces); apply();
+}
+
 void ThemeController::remove() { lastFound = dispatch(false); }
 
 QJsonObject ThemeController::preset() const
 {
     QJsonObject selected;
     for (const auto &id : dockIds()) selected[id] = panels.value(id, false);
-    return {{"format", "twitch-dock-themes"}, {"version", 2}, {"overrides", overrides}, {"enabled", enabled},
+    return {{"format", "twitch-dock-themes"}, {"version", 3}, {"visual", visual.json()}, {"overrides", overrides}, {"enabled", enabled},
         {"mode", mode}, {"motion", motion}, {"density", density}, {"panels", selected},
         {"colors", QJsonObject{{"background", background}, {"accent", accent}, {"border", border}}}};
 }
@@ -212,7 +222,7 @@ QJsonObject ThemeController::preset() const
 bool ThemeController::setPreset(const QJsonObject &v, QString *error)
 {
     auto fail = [&]() { if (error) *error = "Preset inválido ou de uma versão incompatível."; return false; };
-    if (v["format"] != "twitch-dock-themes" || (v["version"] != 1 && v["version"] != 2) ||
+    if (v["format"] != "twitch-dock-themes" || (v["version"] != 1 && v["version"] != 2 && v["version"] != 3) ||
         !v["enabled"].isBool() || !v["motion"].isBool()) return fail();
     const auto m = v["mode"].toString(), d = v["density"].toString();
     if (!QStringList{"follow", "obsidian", "graphite", "custom"}.contains(m) ||
@@ -223,7 +233,7 @@ bool ThemeController::setPreset(const QJsonObject &v, QString *error)
         if (!hex.match(colors[key].toString()).hasMatch()) return fail();
     for (const auto &id : dockIds()) if (!selected[id].isBool()) return fail();
     QJsonObject incoming;
-    if (v["version"] == 2) {
+    if (v["version"] == 2 || v["version"] == 3) {
         if (!v["overrides"].isObject()) return fail();
         const auto raw = v["overrides"].toObject();
         for (auto it = raw.begin(); it != raw.end(); ++it) {
@@ -242,6 +252,9 @@ bool ThemeController::setPreset(const QJsonObject &v, QString *error)
             if (!item.isEmpty()) incoming[it.key()] = item;
         }
     }
+    VisualOptions importedVisual;
+    if (v["version"] == 3 && (!v["visual"].isObject() || !VisualOptions::parse(v["visual"].toObject(), importedVisual))) return fail();
+    visual = importedVisual;
     overrides = incoming;
     enabled = v["enabled"].toBool(); motion = v["motion"].toBool(); mode = m; density = d;
     background = colors["background"].toString(); accent = colors["accent"].toString(); border = colors["border"].toString();
@@ -263,7 +276,7 @@ QJsonObject ThemeController::diagnostics() const
             {"colors", palette(effectiveMode)}});
     }
     return {{"format", "twitch-dock-themes-diagnostics"}, {"version", 1},
-        {"enabled", enabled}, {"motion", motion},
+        {"enabled", enabled}, {"motion", motion}, {"visual", visual.json()},
         {"lastScanUtc", lastScan.isValid() ? lastScan.toString(Qt::ISODateWithMs) : QString()},
         {"visualApplicationConfirmed", false},
         {"scope", "Built-in Twitch docks only. Script execution has no result callback; page styling is not confirmed."},

@@ -142,7 +142,7 @@ int main(int argc, char **argv) try
     check(!controller.setPreset(bad) && controller.preset() == custom, "Invalid colors mutated state");
     bad = custom; bad["panels"] = QJsonObject{};
     check(!controller.setPreset(bad), "Incomplete panel selection accepted");
-    bad = custom; bad["version"] = 3;
+    bad = custom; bad["version"] = 4;
     check(!controller.setPreset(bad), "Future preset accepted");
     const auto encoded = QJsonDocument(custom).toJson();
     check(controller.setPreset(QJsonDocument::fromJson(encoded).object()), "Export/import roundtrip failed");
@@ -202,6 +202,25 @@ int main(int argc, char **argv) try
     auto legacyPreset = saved; legacyPreset["version"] = 1; legacyPreset.remove("overrides");
     check(controller.setPreset(legacyPreset) && controller.overrides.isEmpty(), "Legacy preset migration failed");
     check(controller.setPreset(saved), "Failed to restore global settings");
+
+    ThemeController visualsTest(&main);
+    auto visualPreset = visualsTest.preset();
+    auto opts = visualsTest.visual.json();
+    opts["icons"] = "rounded"; opts["feed"] = "cards"; opts["focus"] = true; opts["alerts"] = true; opts["duration"] = 5;
+    visualPreset["visual"] = opts;
+    check(visualsTest.setPreset(visualPreset), "Visual preset rejected");
+    visualsTest.saveSettings(settings); visualsTest.resetPreferences(); visualsTest.loadSettings(settings);
+    check(visualsTest.preset() == visualPreset, "Visual options not persisted");
+    visualsTest.apply();
+    check(chatBrowser->last.find("\"icons\":\"rounded\"") != std::string::npos, "Icon config not dispatched");
+    visualsTest.testBorder();
+    check(chatBrowser->last.find("\"testPulse\":\"\"") == std::string::npos, "Test pulse missing");
+    check(visualsTest.preset() == visualPreset, "Test pulse changed saved preferences");
+    auto invalidVisual = visualPreset;
+    opts["duration"] = 99; invalidVisual["visual"] = opts;
+    check(!visualsTest.setPreset(invalidVisual) && visualsTest.preset() == visualPreset, "Invalid visual mutated state");
+    auto oldPreset = saved; oldPreset["version"] = 2; oldPreset.remove("visual");
+    check(visualsTest.setPreset(oldPreset) && visualsTest.visual.icons == "native" && !visualsTest.visual.alerts, "Legacy visual defaults changed");
 
     const auto libraryPath = temp.filePath("presets.json");
     PresetLibrary library(libraryPath);
