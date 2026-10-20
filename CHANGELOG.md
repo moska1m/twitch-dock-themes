@@ -1,5 +1,14 @@
 # Histórico
 
+## 0.4.0
+
+- Aparência independente nos quatro painéis, com opção de acompanhar o geral.
+- Densidade exclusiva para Chat e Atividades, com compactação e ajuste de texto no feed.
+- Botão para sincronizar os painéis com a configuração geral.
+- Diagnóstico da configuração ativa e dos pedidos enviados aos navegadores.
+- Presets formato 2 com escolhas por painel e importação do formato anterior.
+- Correção do reset ao reabrir preferências e recuperação de entradas nulas antigas.
+
 ## 0.3.0
 
 - Densidades Compacta, Padrão da Twitch e Confortável.
