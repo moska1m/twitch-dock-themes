@@ -1,0 +1,391 @@
+@OBSThemeMeta {
+    name: 'Obsidian';
+    id: 'local.launcherstyles.obsidian';
+    extends: 'com.obsproject.Yami';
+    author: 'Launcher Styles';
+    dark: 'true';
+}
+
+@OBSThemeVars {
+    --grey1: #77777D;
+    --grey2: #606067;
+    --grey3: #3A3A40;
+    --grey4: #2A2A30;
+    --grey5: #202024;
+    --grey6: #101014;
+    --grey7: #18181B;
+    --grey8: #0A0A0D;
+    --primary: #153C4D;
+    --primary_light: #21546A;
+    --primary_lighter: #54CCF5;
+    --primary_dark: #12303D;
+    --primary_darker: #10262F;
+    --bg_window: var(--grey7);
+    --bg_base: var(--grey6);
+    --bg_preview: var(--grey8);
+    --text: #F1F1F3;
+    --text_light: #F1F1F3;
+    --text_inactive: #F1F1F3;
+    --text_muted: #AAAAB3;
+    --text_disabled: #AAAAB3;
+    --border_color: #35353B;
+    --border_radius: 8px;
+    --border_radius_small: 4px;
+    --border_radius_large: 10px;
+    --input_bg: #202024;
+    --input_bg_hover: var(--grey7);
+    --input_bg_focus: var(--grey8);
+    --input_border: #35353B;
+    --input_border_hover: var(--grey1);
+    --input_border_focus: var(--primary_lighter);
+    --button_bg: #202024;
+    --button_bg_hover: #303036;
+    --button_bg_down: #151519;
+    --button_bg_disabled: var(--grey6);
+    --button_border: #35353B;
+    --button_border_hover: var(--grey1);
+    --button_border_focus: var(--primary_lighter);
+    --list_item_bg_selected: #153C4D;
+    --list_item_bg_hover: #232329;
+    --launcher_row_hover: #232329;
+    --launcher_selected_hover: #21546A;
+    --launcher_title: #101014;
+    --tab_bg: var(--grey7);
+    --tab_bg_hover: #303036;
+    --tab_bg_down: var(--primary);
+    --tab_border: #35353B;
+    --tab_border_hover: var(--grey1);
+    --tab_border_focus: var(--primary_lighter);
+    --tab_border_selected: var(--primary_lighter);
+    --scrollbar_bg: var(--grey7);
+    --scrollbar_handle: var(--grey3);
+    --scrollbar_hover: var(--grey2);
+    --scrollbar_down: var(--grey1);
+    --scrollbar_border: var(--grey3);
+    --palette_link: var(--primary_lighter);
+    --palette_linkVisited: var(--primary_lighter);
+    --highlight_color: var(--primary_lighter);
+}
+
+/* Geometry, fonts, density, icons and meters remain inherited from Yami.
+   Borders below only change color: hovering never changes control size. */
+QDockWidget::title {
+    background: var(--launcher_title);
+    color: var(--text);
+}
+QDockWidget::close-button:hover,
+QDockWidget::float-button:hover {
+    background: var(--button_bg_hover);
+}
+QSlider::sub-page:horizontal,
+QSlider::add-page:vertical,
+.slider-tbar::sub-page:horizontal {
+    background: var(--primary_lighter);
+}
+QSlider::sub-page:horizontal:disabled,
+QSlider::add-page:vertical:disabled,
+.slider-tbar::sub-page:horizontal:disabled {
+    background: var(--grey4);
+}
+QProgressBar::chunk {
+    background: var(--primary);
+    border-top-color: var(--primary_light);
+    border-bottom-color: var(--primary_dark);
+}
+VolumeControl .mixer-category {
+    background: var(--primary_darker);
+    color: var(--primary_lighter);
+}
+VolumeControl.volume-pinned .mixer-category {
+    background: var(--primary_dark);
+    color: var(--text_light);
+}
+
+/* Hover stays distinct from persistent selection. */
+QMenu::item:hover,
+QListView::item:hover,
+QListWidget::item:hover,
+SceneTree::item:hover,
+SourceTree::item:hover {
+    background: var(--launcher_row_hover);
+    border-color: var(--border_color);
+}
+QMenu::item:selected,
+QMenu > QWidget:selected,
+QListView::item:selected,
+QListWidget::item:selected,
+SceneTree::item:selected,
+SourceTree::item:selected {
+    background: var(--list_item_bg_selected);
+    color: var(--text);
+    border-color: var(--primary_light);
+    border-left-color: var(--primary_lighter);
+}
+QMenu::item:selected:hover,
+QListView::item:selected:hover,
+QListWidget::item:selected:hover,
+SceneTree::item:selected:hover,
+SourceTree::item:selected:hover {
+    background: var(--launcher_selected_hover);
+    color: var(--text);
+    border-color: var(--primary_lighter);
+}
+QMenu::item:focus,
+QListView::item:focus,
+QListWidget::item:focus,
+QMenu::item:selected:focus,
+QListView::item:selected:focus,
+QListWidget::item:selected:focus,
+SceneTree::item:focus,
+SourceTree::item:focus {
+    border-color: var(--primary_lighter);
+}
+QListView::item:disabled,
+QListView::item:disabled:hover,
+QListWidget::item:disabled,
+QListWidget::item:disabled:hover {
+    background: transparent;
+    color: var(--text_disabled);
+    border-color: transparent;
+}
+
+/* Grid mode has more specific base selectors and needs its own states. */
+.list-grid SceneTree::item:hover {
+    background: var(--launcher_row_hover);
+}
+.list-grid SceneTree::item:selected,
+.list-grid SceneTree::item:checked {
+    background: var(--list_item_bg_selected);
+    border-color: var(--primary_lighter);
+}
+.list-grid SceneTree::item:selected:hover,
+.list-grid SceneTree::item:checked:hover {
+    background: var(--launcher_selected_hover);
+    border-color: var(--primary_lighter);
+}
+
+QPushButton:focus,
+QPushButton:checked:focus,
+QToolButton:focus,
+QToolButton:checked:focus,
+.btn-tool:focus {
+    border-color: var(--primary_lighter);
+}
+QPushButton:disabled,
+QToolButton:disabled {
+    color: var(--text_disabled);
+}
+
+/* Active output is clearly different from ordinary hover/selection. */
+#streamButton:!hover:!pressed.state-active {
+    background: #174737;
+    border-color: #65D8AA;
+    color: #F1FFF8;
+}
+#streamButton:hover:!pressed.state-active {
+    background: #215B46;
+    border-color: #8AE7BF;
+    color: #F1FFF8;
+}
+#streamButton:pressed.state-active {
+    background: #12372B;
+}
+#recordButton:!hover:!pressed.state-active {
+    background: #682B38;
+    border-color: #F18B9C;
+    color: #FFF3F5;
+}
+#recordButton:hover:!pressed.state-active {
+    background: #813749;
+    border-color: #FFACB9;
+    color: #FFF3F5;
+}
+#recordButton:pressed.state-active {
+    background: #4F202C;
+}
+#pauseRecordButton:!hover:!pressed.state-active,
+#pauseRecordButton:hover:!pressed.state-active,
+#pauseRecordButton:pressed.state-active {
+    background: #61481B;
+    border-color: #E8C577;
+    color: #FFF7E8;
+}
+
+/* Rounded dock shell: title and content share a surface and outline.
+   Existing content border and bottom radii come from Yami. */
+QDockWidget::title {
+    border: 1px solid var(--border_color);
+    border-bottom: none;
+    border-top-left-radius: var(--border_radius_large);
+    border-top-right-radius: var(--border_radius_large);
+}
+OBSDock > QWidget {
+    border-bottom-left-radius: var(--border_radius_large);
+    border-bottom-right-radius: var(--border_radius_large);
+}
+/* Search/input capsules scale with the inherited control height. */
+QLineEdit {
+    border-radius: var(--input_height_half);
+}
+QListView QLineEdit,
+QListWidget QLineEdit {
+    border-radius: var(--border_radius_small);
+}
+QMenu {
+    border-radius: var(--border_radius_large);
+}
+QTabBar::tab:selected {
+    background: var(--bg_base);
+    color: var(--text);
+}
+QTabBar::tab:top:selected {
+    border-bottom-color: var(--primary_lighter);
+}
+QTabBar::tab:bottom:selected {
+    border-top-color: var(--primary_lighter);
+}
+
+/* Graphite dialogs and popup menus, scoped to these surfaces. */
+QDialog,
+QMenu,
+QMenu > QMenu {
+    background: #202024;
+    color: #F1F1F3;
+}
+QMenu,
+QMenu > QMenu {
+    border-color: #4B4B52;
+}
+QDialog QAbstractItemView,
+QDialog QScrollArea,
+QDialog QScrollArea > QWidget > QWidget,
+QDialog #PropertiesContainer,
+OBSBasicSettings #PropertiesContainer {
+    background: #202024;
+    color: #F1F1F3;
+}
+QDialog QGroupBox,
+QDialog QTabWidget::pane {
+    background: #26262B;
+    border-color: #4B4B52;
+}
+QDialog QComboBox,
+QDialog QLineEdit,
+QDialog QSpinBox,
+QDialog QDoubleSpinBox,
+QDialog QTextEdit,
+QDialog QPlainTextEdit {
+    background: #2B2B30;
+    color: #F1F1F3;
+    border-color: #4B4B52;
+}
+QDialog QComboBox:hover,
+QDialog QLineEdit:hover,
+QDialog QSpinBox:hover,
+QDialog QDoubleSpinBox:hover {
+    border-color: #85858C;
+}
+QDialog QComboBox:focus,
+QDialog QLineEdit:focus,
+QDialog QSpinBox:focus,
+QDialog QDoubleSpinBox:focus,
+QDialog QTextEdit:focus,
+QDialog QPlainTextEdit:focus {
+    border-color: #54CCF5;
+}
+QDialog QPushButton,
+QDialog QToolButton,
+QDialog QTabBar::tab {
+    background: #303035;
+    color: #F1F1F3;
+    border-color: #4B4B52;
+}
+QDialog QPushButton:hover,
+QDialog QToolButton:hover,
+QDialog QTabBar::tab:hover {
+    background: #414148;
+    border-color: #85858C;
+}
+QDialog QPushButton:checked,
+QDialog QToolButton:checked,
+QDialog QTabBar::tab:selected {
+    background: #404045;
+    border-color: #54CCF5;
+}
+QDialog QPushButton:focus,
+QDialog QToolButton:focus {
+    border-color: #54CCF5;
+}
+QDialog QPushButton:pressed,
+QDialog QToolButton:pressed {
+    background: #232328;
+}
+QDialog QPushButton:disabled,
+QDialog QToolButton:disabled,
+QDialog QComboBox:disabled,
+QDialog QLineEdit:disabled,
+QDialog QSpinBox:disabled,
+QDialog QDoubleSpinBox:disabled {
+    background: #26262B;
+    color: #96969F;
+    border-color: #3A3A40;
+}
+QDialog QListView::item:hover,
+QDialog QListWidget::item:hover,
+QMenu::item:hover {
+    background: #303036;
+    border-color: transparent;
+}
+QDialog QListView::item:selected,
+QDialog QListWidget::item:selected,
+QMenu::item:selected,
+QMenu > QWidget:selected {
+    background: #404045;
+    color: #F1F1F3;
+    border-color: transparent;
+}
+QDialog QListView::item:selected:hover,
+QDialog QListWidget::item:selected:hover,
+QMenu::item:selected:hover {
+    background: #505057;
+    color: #F1F1F3;
+    border-color: transparent;
+}
+QDialog QListView::item:focus,
+QDialog QListWidget::item:focus,
+QDialog QListView::item:selected:focus,
+QDialog QListWidget::item:selected:focus,
+QMenu::item:focus,
+QMenu::item:selected:focus {
+    border-color: #54CCF5;
+}
+QDialog QListView::item:disabled,
+QDialog QListWidget::item:disabled,
+QDialog QListView::item:disabled:hover,
+QDialog QListWidget::item:disabled:hover,
+QMenu::item:disabled,
+QMenu::item:disabled:selected,
+QMenu::item:disabled:hover {
+    background: transparent;
+    color: #96969F;
+    border-color: transparent;
+}
+QMenu::separator {
+    background: #414148;
+}
+QDialog idian--Row {
+    background: #202024;
+    border-color: #414148;
+}
+QDialog idian--Row.hover {
+    background: #2B2B30;
+}
+/* Style existing OBS switches; checkboxes retain their existing behavior. */
+QDialog idian--ToggleSwitch {
+    qproperty-background: #414148;
+    qproperty-background_hover: #505057;
+    qproperty-background_checked: #29BDF0;
+    qproperty-background_checked_hover: #54CCF5;
+    qproperty-handleColor: #10232D;
+}
+

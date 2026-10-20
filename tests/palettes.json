@@ -1,0 +1,102 @@
+{
+  "Yami_Default": {
+    "window": "#1d1f26",
+    "base": "#272a33",
+    "text": "#ffffff",
+    "button": "#3c404d",
+    "highlight": "#284cb8",
+    "link": "#476bd7",
+    "light": "#4e5566",
+    "muted": "#969696"
+  },
+  "Yami_Acri": {
+    "window": "#101010",
+    "base": "#181819",
+    "text": "#ffffff",
+    "button": "#162458",
+    "highlight": "#131a30",
+    "link": "#476bd7",
+    "light": "#575757",
+    "muted": "#969696"
+  },
+  "Yami_Classic": {
+    "window": "#3a393a",
+    "base": "#1f1e1f",
+    "text": "#ffffff",
+    "button": "#4c4c4c",
+    "highlight": "#19344c",
+    "link": "#476bd7",
+    "light": "#868786",
+    "muted": "#969696"
+  },
+  "Yami_Grey": {
+    "window": "#212121",
+    "base": "#2f2f2f",
+    "text": "#ffffff",
+    "button": "#434343",
+    "highlight": "#284cb8",
+    "link": "#476bd7",
+    "light": "#575757",
+    "muted": "#969696"
+  },
+  "Yami_Light": {
+    "window": "#d3d3d3",
+    "base": "#e5e5e5",
+    "text": "#0a0a0a",
+    "button": "#f5f5f5",
+    "highlight": "#8cb5ff",
+    "link": "#476bd7",
+    "light": "#fefefe",
+    "muted": "#646464"
+  },
+  "Yami_Rachni": {
+    "window": "#31363b",
+    "base": "#232629",
+    "text": "#ffffff",
+    "button": "#00bcd4",
+    "highlight": "#914c67",
+    "link": "#476bd7",
+    "light": "#6e7172",
+    "muted": "#969696"
+  },
+  "Dockyard": {
+    "window": "#101c29",
+    "base": "#182838",
+    "text": "#e8f0f7",
+    "button": "#22394d",
+    "highlight": "#234b68",
+    "link": "#79cdf4",
+    "light": "#55718b",
+    "muted": "#a3b5c6"
+  },
+  "Obsidian Graphite": {
+    "window": "#26262b",
+    "base": "#202024",
+    "text": "#f1f1f3",
+    "button": "#303035",
+    "highlight": "#404045",
+    "link": "#54ccf5",
+    "light": "#696970",
+    "muted": "#b3b3bb"
+  },
+  "Obsidian": {
+    "window": "#18181b",
+    "base": "#101014",
+    "text": "#f1f1f3",
+    "button": "#202024",
+    "highlight": "#153c4d",
+    "link": "#54ccf5",
+    "light": "#606067",
+    "muted": "#aaaab3"
+  },
+  "Prism": {
+    "window": "#16111f",
+    "base": "#21192d",
+    "text": "#f1ebfa",
+    "button": "#332641",
+    "highlight": "#493166",
+    "link": "#ceaeff",
+    "light": "#77658e",
+    "muted": "#b6a9c9"
+  }
+}

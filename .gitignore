@@ -1,0 +1,6 @@
+/build*/
+/plugin/bin/
+/SHA256SUMS.txt
+*.zip
+*.user
+__pycache__/

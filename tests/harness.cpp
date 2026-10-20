@@ -1,0 +1,129 @@
+#include "controller.hpp"
+#include "browser-panel.hpp"
+#include <QApplication>
+#include <QDockWidget>
+#include <QJsonDocument>
+#include <QPalette>
+#include <QTemporaryDir>
+#include <QFile>
+#include <QJsonArray>
+#include <iostream>
+#include <stdexcept>
+
+class FakeBrowser : public QCefWidget {
+public:
+    explicit FakeBrowser(QWidget *parent) : QCefWidget(parent) {}
+    std::string last;
+    int calls = 0;
+    void setURL(const std::string &) override { throw std::runtime_error("Unexpected navigation"); }
+    void setStartupScript(const std::string &) override { throw std::runtime_error("Startup script overwritten"); }
+    void allowAllPopups(bool) override {}
+    void closeBrowser() override {}
+    void reloadPage() override { throw std::runtime_error("Unexpected reload"); }
+    bool zoomPage(int) override { return false; }
+    void executeJavaScript(const std::string &s) override { last = s; ++calls; }
+};
+static void check(bool value, const char *message) { if (!value) throw std::runtime_error(message); }
+int main(int argc, char **argv)
+{
+    QApplication app(argc, argv);
+    QWidget main;
+    auto *chat = new QDockWidget(&main); chat->setObjectName("twitchChat");
+    auto *chatBrowser = new FakeBrowser(chat); chat->setWidget(chatBrowser);
+    auto *info = new QDockWidget(&main); info->setObjectName("twitchInfo");
+    auto *infoBrowser = new FakeBrowser(info); info->setWidget(infoBrowser);
+    auto *feed = new QDockWidget(&main); feed->setObjectName("twitchFeed");
+    auto *feedBrowser = new FakeBrowser(feed); feed->setWidget(feedBrowser);
+    auto *stats = new QDockWidget(&main); stats->setObjectName("twitchStats");
+    auto *statsBrowser = new FakeBrowser(stats); stats->setWidget(statsBrowser);
+    auto *other = new QDockWidget(&main); other->setObjectName("customBrowser");
+    auto *otherBrowser = new FakeBrowser(other); other->setWidget(otherBrowser);
+    ThemeController controller(&main);
+    controller.apply();
+    check(controller.lastFound == 4, "Expected all four docks on new install");
+    check(chatBrowser->last.find("\"enabled\":true") != std::string::npos, "Chat not enabled");
+    check(infoBrowser->last.find("\"enabled\":true") != std::string::npos, "Info dock not enabled");
+    check(feedBrowser->calls == 1 && statsBrowser->calls == 1, "Activity/stat docks not reached");
+    check(otherBrowser->calls == 0, "Unrelated browser touched");
+    controller.panels["twitchInfo"] = false;
+    controller.panels["twitchChat"] = false;
+    controller.apply();
+    check(controller.lastFound == 2, "Independent toggles not respected");
+    check(infoBrowser->last.find("\"enabled\":false") != std::string::npos, "Info style not removed");
+    check(chatBrowser->last.find("\"enabled\":false") != std::string::npos, "Chat style not removed");
+    check(controller.found.size() == 4, "Disabled but open docks missing from status");
+    controller.resetPreferences();
+    controller.mode = "graphite";
+    controller.apply();
+    check(chatBrowser->last.find("#26262b") != std::string::npos, "Graphite palette missing");
+    controller.mode = "follow";
+    QPalette p = QApplication::palette();
+    p.setColor(QPalette::Window, QColor("#fafafa"));
+    p.setColor(QPalette::Highlight, QColor("#ffdd00"));
+    QApplication::setPalette(p);
+    check(controller.palette()["window"] == "#fafafa", "Did not follow window palette");
+    check(controller.palette()["onAccent"] == "#000000", "Incorrect bright accent contrast");
+    p.setColor(QPalette::Highlight, QColor("#182050"));
+    QApplication::setPalette(p);
+    check(controller.palette()["onAccent"] == "#ffffff", "Incorrect dark accent contrast");
+    controller.enabled = false;
+    controller.apply();
+    check(chatBrowser->last.find("\"enabled\":false") != std::string::npos, "Did not disable chat");
+    delete info;
+    controller.apply();
+    check(controller.lastFound == 3, "Destroyed dock was retained");
+    auto *newInfo = new QDockWidget(&main); newInfo->setObjectName("twitchInfo");
+    auto *newBrowser = new FakeBrowser(newInfo); newInfo->setWidget(newBrowser);
+    controller.enabled = true;
+    controller.apply();
+    check(newBrowser->calls == 1, "New dock not discovered");
+    controller.motion = false;
+    controller.apply();
+    check(chatBrowser->last.find("\"motion\":false") != std::string::npos, "Motion preference lost");
+    QTemporaryDir temp;
+    check(temp.isValid(), "No temp dir");
+    QSettings settings(temp.filePath("settings.ini"), QSettings::IniFormat);
+    settings.setValue("secondary", false);
+    settings.setValue("mode", "obsidian");
+    controller.loadSettings(settings);
+    check(controller.panels["twitchChat"] && !controller.panels["twitchInfo"], "Legacy chat-only migration failed");
+    settings.setValue("secondary", true);
+    controller.loadSettings(settings);
+    check(controller.panels["twitchInfo"], "Legacy secondary migration failed");
+    controller.panels["twitchChat"] = false;
+    controller.motion = false;
+    controller.enabled = false;
+    controller.saveSettings(settings);
+    controller.resetPreferences();
+    controller.loadSettings(settings);
+    check(!controller.enabled && !controller.motion && !controller.panels["twitchChat"], "Roundtrip lost preferences");
+    check(!settings.contains("secondary"), "Legacy key retained");
+    settings.setValue("mode", "invalid");
+    controller.loadSettings(settings);
+    check(controller.mode == "follow", "Invalid mode not handled");
+
+    QFile fixture(PALETTE_FIXTURE);
+    check(fixture.open(QIODevice::ReadOnly), "Missing palette fixtures");
+    const auto fixtures = QJsonDocument::fromJson(fixture.readAll()).object();
+    const QMap<QString, QPalette::ColorRole> roles{
+        {"window", QPalette::Window}, {"base", QPalette::Base}, {"text", QPalette::Text},
+        {"button", QPalette::Button}, {"highlight", QPalette::Highlight},
+        {"link", QPalette::Link}, {"light", QPalette::Light}
+    };
+    for (const auto &key : fixtures.keys()) {
+        const auto colors = fixtures[key].toObject();
+        QPalette sample;
+        for (auto it = roles.begin(); it != roles.end(); ++it)
+            sample.setColor(it.value(), QColor(colors[it.key()].toString()));
+        sample.setColor(QPalette::Disabled, QPalette::Text, QColor(colors["muted"].toString()));
+        QApplication::setPalette(sample);
+        const auto result = controller.palette();
+        check(result["window"] == colors["window"], "Theme window color not followed");
+        check(result["base"] == colors["base"], "Theme base color not followed");
+        for (const auto &value : result)
+            check(QColor(value.toString()).isValid(), "Invalid output color");
+    }
+    std::cout << "PASS: four docks, per-dock toggles, cleanup, motion, preference migration, "
+              << fixtures.size() << " OBS palettes, dock lifecycle, no unrelated browser access\n";
+    return 0;
+}
