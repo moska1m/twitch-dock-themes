@@ -31,6 +31,7 @@
 #include <QLineEdit>
 #include <QScrollArea>
 #include <QScreen>
+#include <QScopedValueRollback>
 
 OBS_DECLARE_MODULE()
 MODULE_EXPORT const char *obs_module_name(void) { return "Twitch Dock Themes"; }
@@ -58,6 +59,8 @@ static void openSettings()
     QDialog d(static_cast<QWidget *>(obs_frontend_get_main_window()));
     d.setWindowTitle("Twitch Dock Themes · experimental");
     d.setMinimumWidth(480);
+    bool populating = false;
+    QTimer liveTimer(&d); liveTimer.setSingleShot(true); liveTimer.setInterval(0);
     auto *outer = new QVBoxLayout(&d);
     auto *scroll = new QScrollArea; scroll->setWidgetResizable(true);
     scroll->setFrameShape(QFrame::NoFrame);
@@ -84,7 +87,7 @@ static void openSettings()
         colorButtons[pair.first] = button; colorLayout->addWidget(button);
         QObject::connect(button, &QPushButton::clicked, &d, [&, key = pair.first, button]() {
             const auto c = QColorDialog::getColor(QColor(button->property("color").toString()), &d, "Escolher cor");
-            if (c.isValid()) { button->setProperty("color", c.name()); button->setText((key == "background" ? "Fundo " : key == "accent" ? "Destaque " : "Bordas ") + c.name()); }
+            if (c.isValid()) { button->setProperty("color", c.name()); button->setText((key == "background" ? "Fundo " : key == "accent" ? "Destaque " : "Bordas ") + c.name()); liveTimer.start(); }
         });
     }
     auto *panelBox = new QGroupBox("Painéis");
@@ -122,10 +125,9 @@ static void openSettings()
     });
     auto *motion = new QCheckBox("Transição suave ao passar o mouse");
     motion->setToolTip("Respeita a preferência de movimento reduzido do sistema.");
-    auto *status = new QLabel("Use Prévia para experimentar. Aplicar salva; Fechar desfaz a prévia.");
+    auto *status = new QLabel("As alterações aparecem automaticamente. Aplicar e salvar confirma; Fechar restaura o que estava salvo.");
     status->setWordWrap(true);
     auto *diagnostic = new QPushButton("Diagnóstico dos painéis");
-    auto *preview = new QPushButton("Prévia nos painéis");
     auto *importButton = new QPushButton("Importar preset");
     auto *exportButton = new QPushButton("Exportar preset");
     PresetLibrary library(QFileInfo(settingsPath).dir().filePath("presets.json"));
@@ -133,12 +135,11 @@ static void openSettings()
     auto *libraryLayout = new QGridLayout(libraryBox);
     auto *savedPresets = new QComboBox;
     savedPresets->setAccessibleName("Presets salvos");
-    auto *loadPreset = new QPushButton("Carregar");
     auto *savePreset = new QPushButton("Salvar como");
     auto *deletePreset = new QPushButton("Excluir");
     libraryLayout->addWidget(savedPresets, 0, 0, 1, 3);
-    libraryLayout->addWidget(loadPreset, 1, 0); libraryLayout->addWidget(savePreset, 1, 1);
-    libraryLayout->addWidget(deletePreset, 1, 2);
+    libraryLayout->addWidget(savePreset, 1, 0);
+    libraryLayout->addWidget(deletePreset, 1, 1);
     auto *presetRow = new QHBoxLayout;
     presetRow->addWidget(importButton); presetRow->addWidget(exportButton);
     auto *buttons = new QDialogButtonBox(QDialogButtonBox::Apply | QDialogButtonBox::Close);
@@ -149,13 +150,15 @@ static void openSettings()
     layout->addWidget(colors); layout->addWidget(new QLabel("Densidade (chat e atividades)")); layout->addWidget(density);
     layout->addWidget(panelBox); layout->addWidget(motion); layout->addWidget(libraryBox); layout->addLayout(presetRow);
     layout->addWidget(diagnostic);
-    layout->addWidget(status); layout->addWidget(preview); layout->addWidget(reset); outer->addWidget(buttons);
+    layout->addWidget(status); layout->addWidget(reset); outer->addWidget(buttons);
     auto updateColors = [&]() {
         bool needed = mode->currentData() == "custom";
         for (auto *pm : panelModes) needed = needed || pm->currentData() == "custom";
         colors->setEnabled(needed);
     };
     auto populate = [&]() {
+        QScopedValueRollback<bool> guard(populating, true);
+        liveTimer.stop();
         enabled->setChecked(draft.enabled); motion->setChecked(draft.motion);
         mode->setCurrentIndex(mode->findData(draft.mode)); density->setCurrentIndex(density->findData(draft.density));
         for (const auto &id : ThemeController::dockIds()) {
@@ -187,6 +190,14 @@ static void openSettings()
             if (!item.isEmpty()) draft.overrides[id] = item;
         }
     };
+    auto applyLive = [&]() {
+        if (populating || !controller) return;
+        collect();
+        controller->setPreset(draft.preset()); controller->apply();
+        status->setText("Alterações em exibição. Aplicar e salvar confirma; Fechar restaura a última configuração salva.");
+    };
+    QObject::connect(&liveTimer, &QTimer::timeout, &d, applyLive);
+    auto scheduleLive = [&]() { if (!populating) liveTimer.start(); };
     auto refreshLibrary = [&](const QString &selection) {
         QJsonObject items; QString error;
         const bool ok = library.read(items, error);
@@ -196,18 +207,17 @@ static void openSettings()
             for (const auto &name : names) savedPresets->addItem(name, name);
         } else status->setText(error);
         if (!selection.isEmpty()) savedPresets->setCurrentIndex(savedPresets->findData(selection));
-        loadPreset->setEnabled(ok && savedPresets->currentIndex() >= 0);
         deletePreset->setEnabled(ok && savedPresets->currentIndex() >= 0);
         savePreset->setEnabled(ok);
         savedPresets->setPlaceholderText(ok ? "Nenhum preset salvo" : "Biblioteca indisponível");
     };
     refreshLibrary({});
-    QObject::connect(loadPreset, &QPushButton::clicked, &d, [&]() {
+    QObject::connect(savedPresets, &QComboBox::activated, &d, [&]() {
         QJsonObject items; QString error;
         if (!library.read(items, error) || !draft.setPreset(items.value(savedPresets->currentData().toString()).toObject(), &error)) {
             QMessageBox::warning(&d, "Carregar preset", error); return;
         }
-        populate(); status->setText("Preset carregado nos controles. Use Prévia ou Aplicar e salvar.");
+        populate(); applyLive();
     });
     QObject::connect(savePreset, &QPushButton::clicked, &d, [&]() {
         bool accepted = false;
@@ -221,7 +231,7 @@ static void openSettings()
             QMessageBox::Yes | QMessageBox::No, QMessageBox::No) != QMessageBox::Yes) return;
         collect();
         if (!library.put(name, draft.preset(), exists, error)) { QMessageBox::warning(&d, "Salvar preset", error); return; }
-        refreshLibrary(name); status->setText("Preset salvo na biblioteca. Use Prévia ou Aplicar para alterar os painéis.");
+        refreshLibrary(name); status->setText("Preset guardado na biblioteca. Aplicar e salvar confirma a configuração em exibição.");
     });
     QObject::connect(deletePreset, &QPushButton::clicked, &d, [&]() {
         const auto name = savedPresets->currentData().toString();
@@ -234,6 +244,13 @@ static void openSettings()
     QObject::connect(mode, &QComboBox::currentIndexChanged, &d, updateColors);
     for (auto *pm : panelModes) QObject::connect(pm, &QComboBox::currentIndexChanged, &d, updateColors);
     populate();
+    QObject::connect(enabled, &QCheckBox::toggled, &d, scheduleLive);
+    QObject::connect(motion, &QCheckBox::toggled, &d, scheduleLive);
+    QObject::connect(mode, &QComboBox::currentIndexChanged, &d, scheduleLive);
+    QObject::connect(density, &QComboBox::currentIndexChanged, &d, scheduleLive);
+    for (auto *check : checks) QObject::connect(check, &QCheckBox::toggled, &d, scheduleLive);
+    for (auto *combo : panelModes) QObject::connect(combo, &QComboBox::currentIndexChanged, &d, scheduleLive);
+    for (auto *combo : panelDensities) QObject::connect(combo, &QComboBox::currentIndexChanged, &d, scheduleLive);
     auto update = [&]() {
         if (!controller) { d.reject(); return; }
         for (const auto &id : ThemeController::dockIds()) states[id]->setText(controller->found.contains(id) ? "Encontrado" : "Não aberto");
@@ -243,20 +260,15 @@ static void openSettings()
     QObject::connect(&statusTimer, &QTimer::timeout, &d, update); statusTimer.start(1000);
     auto persist = [&]() {
         if (save()) { committed = controller->preset(); status->setText("Preferências salvas."); }
-        else QMessageBox::warning(&d, "Twitch Dock Themes", "Não foi possível salvar. A prévia será desfeita ao fechar.");
+        else QMessageBox::warning(&d, "Twitch Dock Themes", "Não foi possível salvar. As alterações serão desfeitas ao fechar.");
     };
-    QObject::connect(preview, &QPushButton::clicked, &d, [&]() {
-        if (!controller) return;
-        collect(); controller->setPreset(draft.preset()); controller->apply(); update();
-        status->setText("Prévia ativa nos painéis. Aplicar salva; Fechar restaura a configuração salva.");
-    });
     QObject::connect(apply, &QPushButton::clicked, &d, [&]() {
         if (!controller) return;
-        collect(); controller->setPreset(draft.preset()); controller->apply(); persist(); update();
+        liveTimer.stop(); collect(); controller->setPreset(draft.preset()); controller->apply(); persist(); update();
     });
     QObject::connect(reset, &QPushButton::clicked, &d, [&]() {
         if (!controller) return;
-        controller->setPreset(committed); controller->enabled = false; controller->remove(); persist();
+        liveTimer.stop(); controller->setPreset(committed); controller->enabled = false; controller->remove(); persist();
         draft.setPreset(controller->preset()); populate(); update();
     });
     QObject::connect(importButton, &QPushButton::clicked, &d, [&]() {
@@ -270,7 +282,7 @@ static void openSettings()
         if (parse.error != QJsonParseError::NoError || !doc.isObject() || !draft.setPreset(doc.object(), &error)) {
             QMessageBox::warning(&d, "Importar preset", "Preset inválido ou incompatível. Nenhuma alteração aplicada."); return;
         }
-        populate(); status->setText("Preset carregado. Use Prévia ou Aplicar para testar nos painéis.");
+        populate(); applyLive();
     });
     QObject::connect(exportButton, &QPushButton::clicked, &d, [&]() {
         const auto path = QFileDialog::getSaveFileName(&d, "Exportar preset", "twitch-dock-preset.json", "Preset JSON (*.json)");
@@ -312,6 +324,7 @@ static void openSettings()
     });
     QObject::connect(buttons, &QDialogButtonBox::rejected, &d, &QDialog::reject);
     d.exec();
+    liveTimer.stop();
     if (controller) { controller->setPreset(committed); controller->apply(); }
 }
 
@@ -352,7 +365,7 @@ void obs_module_post_load(void)
     menuAction = static_cast<QAction *>(obs_frontend_add_tools_menu_qaction("Twitch Dock Themes"));
     if (menuAction) QObject::connect(menuAction, &QAction::triggered, controller, []() { openSettings(); });
     obs_frontend_add_event_callback(frontendEvent, nullptr);
-    blog(LOG_INFO, "[twitch-dock-themes] 0.4.0 experimental preset-library loaded; mode=%s.", controller->mode.toUtf8().constData());
+    blog(LOG_INFO, "[twitch-dock-themes] 0.4.0 experimental live-preview loaded; mode=%s.", controller->mode.toUtf8().constData());
 }
 
 void obs_module_unload(void)

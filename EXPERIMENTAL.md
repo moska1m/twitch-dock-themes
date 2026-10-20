@@ -1,20 +1,19 @@
-# Biblioteca local de presets — compilação de teste
+# Biblioteca de presets e alterações automáticas — compilação de teste
 
-Base estável: 0.4.0. A biblioteca Meus presets permite guardar combinações pelo nome dentro do plugin.
+Base estável: 0.4.0. A seção Meus presets guarda combinações pelo nome.
 
-- Salvar como guarda as escolhas atuais dos controles, incluindo aparência por painel, densidade, cores, movimento e ativação.
-- Carregar preenche os controles. Prévia testa nos painéis; Aplicar e salvar confirma a configuração ativa.
-- Nomes existentes pedem confirmação antes da substituição. Excluir remove o preset da biblioteca após confirmação e mantém a configuração ativa.
-- A biblioteca fica em `%APPDATA%\obs-studio\plugin_config\twitch-dock-themes\presets.json`. Cada gravação é atômica. Nomes têm limite de 64 caracteres, com até 100 presets.
-- Um arquivo ilegível ou inválido é preservado e bloqueia gravações na biblioteca; importar/exportar arquivos individuais continua disponível.
-- A janela tem rolagem e mantém Aplicar e Fechar fora da área rolável.
+- Alterar aparência, densidade, cores, movimento ou seleção dos painéis atualiza o OBS automaticamente.
+- Selecionar um preset na lista ou importar um JSON preenche os controles e exibe a combinação imediatamente.
+- Aplicar e salvar confirma a configuração ativa. Fechar sem confirmar restaura a última configuração salva, inclusive se você carregou um preset.
+- Salvar como guarda os controles na biblioteca, sem confirmar a configuração ativa. Nomes repetidos pedem confirmação antes de substituir. Excluir remove somente o preset escolhido.
+- A biblioteca fica em `%APPDATA%\obs-studio\plugin_config\twitch-dock-themes\presets.json`, com gravação atômica e preservação de arquivos inválidos.
+- A janela tem rolagem, mantendo Aplicar e Fechar sempre visíveis.
 
-## Roteiro de teste
+## Conferir no OBS
 
-1. Escolha aparência e densidade e use Salvar como com um nome.
-2. Feche e reabra a janela. Confira o preset na lista.
-3. Altere os controles, carregue o preset e confira a recuperação das escolhas.
-4. Use Prévia, feche sem aplicar e confira a restauração da última configuração salva.
-5. Confira substituição de nome e exclusão. Para compartilhar um preset carregado, use Exportar preset.
+1. Mude uma aparência ou densidade e confira a alteração automática.
+2. Salve uma combinação em Meus presets. Selecione outra e depois volte à primeira.
+3. Feche sem Aplicar e salvar: confira a restauração da última configuração confirmada.
+4. Reabra, altere uma opção, aplique e salve. Feche e reabra para conferir a persistência.
 
-Testes locais cobrem reabertura da biblioteca, escolhas por painel, substituição explícita, exclusão, nomes inválidos, conteúdo inválido e preservação de arquivo corrompido. A interface precisa de conferência manual no OBS.
+Compilação, testes de controlador/biblioteca/CSS e carregamento da DLL passaram. A interação automática na janela precisa da conferência manual no OBS.
